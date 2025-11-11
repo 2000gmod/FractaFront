@@ -1,0 +1,9 @@
+Lexer:
+    prefix: LX
+    errors:
+        - UnexpectedChar:
+              msg: "Got an unexpected character"
+              severity: "Error"
+        - UnterminatedString:
+              msg: "String literal is not terminated"
+              severity: "Error"
