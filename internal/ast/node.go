@@ -1,20 +1,20 @@
 package ast
 
 type ASTNode interface {
-	Node() ASTNode
+	node()
 }
 
 type Expr interface {
 	ASTNode
-	exprNode() Expr
+	exprNode()
 }
 
 type Statement interface {
 	ASTNode
-	stmtNode() Statement
+	stmtNode()
 }
 
 type Type interface {
 	ASTNode
-	typeNode() Type
+	typeNode()
 }

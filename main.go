@@ -1,9 +1,9 @@
-//go:generate go run ./gen/gen_errors.go
+//go:generate go run ./gen/errors/gen_errors.go
 
 package main
 
 import (
-	"fracta/internal/cmd"
+	"fracta/cmd"
 )
 
 func main() {

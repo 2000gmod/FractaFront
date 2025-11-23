@@ -14,34 +14,46 @@ const (
 
 // A type for containing compilation errors.
 type ErrorContainer struct {
-	// The error code.
-	Code string
-
-	// The error message.
-	Message string
-
-	// The severity of the error.
-	Severity Severity
+	Code     string   // The error code.
+	Message  string   // The error message.
+	Severity Severity // The severity of the error.
+	Context  string   // The file or context name where the error ocurred.
+	Line     int      // Where in the file did the error occur.
 }
 
 type LexerErrorKind int
 
 const (
-	// Error message: Got an unexpected character
-	LXUnexpectedChar LexerErrorKind = iota
-
-	// Error message: String literal is not terminated
-	LXUnterminatedString
+	LUnexpectedChar           LexerErrorKind = iota // Error message: Got an unexpected character
+	LUnterminatedString                             // Error message: String literal is not terminated
+	LUnterminatedBlockComment                       // Error message: Block comment was not terminated.
+	LInvalidNumberLiteral                           // Error message: Got invalid number literal.
+	LInvalidEscape                                  // Error message: Got invalid escape sequence.
 )
 
-var LexerErrorRegistry = map[LexerErrorKind]ErrorContainer{
-	LXUnexpectedChar: {
-		Code:     "LX0001",
+var lexerErrorRegistry = map[LexerErrorKind]*ErrorContainer{
+	LInvalidEscape: {
+		Code:     "L0005",
+		Message:  "Got invalid escape sequence.",
+		Severity: Error,
+	},
+	LInvalidNumberLiteral: {
+		Code:     "L0004",
+		Message:  "Got invalid number literal.",
+		Severity: Error,
+	},
+	LUnexpectedChar: {
+		Code:     "L0001",
 		Message:  "Got an unexpected character",
 		Severity: Error,
 	},
-	LXUnterminatedString: {
-		Code:     "LX0002",
+	LUnterminatedBlockComment: {
+		Code:     "L0003",
+		Message:  "Block comment was not terminated.",
+		Severity: Error,
+	},
+	LUnterminatedString: {
+		Code:     "L0002",
 		Message:  "String literal is not terminated",
 		Severity: Error,
 	},
@@ -49,10 +61,60 @@ var LexerErrorRegistry = map[LexerErrorKind]ErrorContainer{
 
 func (a LexerErrorKind) String() string {
 	switch a {
-	case LXUnexpectedChar:
-		return "LXUnexpectedChar"
-	case LXUnterminatedString:
-		return "LXUnterminatedString"
+	case LUnexpectedChar:
+		return "LUnexpectedChar"
+	case LUnterminatedString:
+		return "LUnterminatedString"
+	case LUnterminatedBlockComment:
+		return "LUnterminatedBlockComment"
+	case LInvalidNumberLiteral:
+		return "LInvalidNumberLiteral"
+	case LInvalidEscape:
+		return "LInvalidEscape"
 	}
 	return "[?]"
+}
+
+func GetLexerErrorKind(kind LexerErrorKind, context string, line int) *ErrorContainer {
+	e := *lexerErrorRegistry[kind]
+	e.Context = context
+	e.Line = line
+	return &e
+}
+
+type ParserErrorKind int
+
+const (
+	PTestError   ParserErrorKind = iota // Error message: Test error thing
+	PTestWarning                        // Error message: Test warning thing
+)
+
+var parserErrorRegistry = map[ParserErrorKind]*ErrorContainer{
+	PTestError: {
+		Code:     "P0001",
+		Message:  "Test error thing",
+		Severity: Error,
+	},
+	PTestWarning: {
+		Code:     "P0002",
+		Message:  "Test warning thing",
+		Severity: Warning,
+	},
+}
+
+func (a ParserErrorKind) String() string {
+	switch a {
+	case PTestError:
+		return "PTestError"
+	case PTestWarning:
+		return "PTestWarning"
+	}
+	return "[?]"
+}
+
+func GetParserErrorKind(kind ParserErrorKind, context string, line int) *ErrorContainer {
+	e := *parserErrorRegistry[kind]
+	e.Context = context
+	e.Line = line
+	return &e
 }

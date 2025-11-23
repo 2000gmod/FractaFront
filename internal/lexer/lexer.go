@@ -1,11 +1,10 @@
 package lexer
 
 import (
-	"bufio"
 	"fracta/internal/diag"
 	tok "fracta/internal/token"
 	"io"
-	"os"
+	"strconv"
 	"strings"
 )
 
@@ -72,36 +71,14 @@ func matchPunctuation(src string) matchResult {
 	}
 }
 
-// Transforms valid Fracta source into a token stream
-type Lexer struct {
-	reader      *bufio.Reader
-	closer      io.Closer
-	currentLine int
-	filename    string
-	errors      []diag.ErrorContainer
+func (l *Lexer) GetErrors() []*diag.ErrorContainer {
+	return l.errors
 }
 
-func NewLexerFromFile(path string) (*Lexer, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
+func (l *Lexer) addError(ekind diag.LexerErrorKind) {
+	other := diag.GetLexerErrorKind(ekind, l.filename, l.currentLine)
 
-	return &Lexer{
-		reader:      bufio.NewReader(f),
-		closer:      f,
-		currentLine: 1,
-		filename:    path,
-		errors:      []diag.ErrorContainer{},
-	}, nil
-}
-
-func NewLexerFromReader(r io.Reader, name string) *Lexer {
-	return &Lexer{
-		reader:      bufio.NewReader(r),
-		currentLine: 1,
-		filename:    name,
-	}
+	l.errors = append(l.errors, other)
 }
 
 // Closes the file handle, if any
@@ -132,35 +109,41 @@ func (l *Lexer) peek() rune {
 		return 0
 	}
 
-	r, _, err := l.reader.ReadRune()
+	b, err := l.reader.Peek(1)
 	if err == io.EOF {
 		l.reader = nil
 		return 0
 	}
-	_ = l.reader.UnreadRune()
+	if err != nil {
+		return 0
+	}
 
-	return r
+	return rune(b[0])
 }
 
 // Gets all the tokens, until an EOF is reached
 func (l *Lexer) GetAllTokens() []tok.Token {
-	panic("TODO")
+	out := make([]tok.Token, 0)
+	for {
+		nw := l.GetToken()
+		out = append(out, nw)
+		if nw.Kind == tok.TokEndOfFile || nw.Kind == tok.TokError {
+			break
+		}
+	}
+	return out
 }
 
 func (l *Lexer) GetToken() tok.Token {
 	var out tok.Token
 
-	if len(l.errors) != 0 || l.reader == nil {
-		out.Kind = tok.TokError
-		out.Line = l.currentLine
-	} else if _, err := l.reader.Peek(1); err == io.EOF {
-		l.reader = nil
+	if l.reader == nil {
 		out.Kind = tok.TokEndOfFile
 		out.Line = l.currentLine
-	} else {
-		l.ScanToken(&out)
+		return out
 	}
 
+	l.ScanToken(&out)
 	return out
 }
 
@@ -173,116 +156,275 @@ func (l *Lexer) ScanToken(t *tok.Token) {
 		return
 	}
 
-	{
-		skipFlag := false
-
-		for ok := true; ok; ok = skipFlag {
-		sw:
-			switch c {
-			case '\n':
-				l.currentLine++
-				fallthrough
-			case ' ':
-				fallthrough
-			case '\t':
-				fallthrough
-			case '\r':
-				skipFlag = true
-				break sw
-			default:
-				skipFlag = false
-			}
-			if skipFlag {
+	// Skip whitespace and handle comments
+	for {
+		switch c {
+		case ' ', '\t', '\r':
+			c = l.advance()
+		case '\n':
+			l.currentLine++
+			c = l.advance()
+		case '/':
+			r := l.peek()
+			if r == '/' { // line comment
+				_ = l.advance()
+				for {
+					r2 := l.advance()
+					if r2 == 0 || r2 == '\n' {
+						if r2 == '\n' {
+							l.currentLine++
+						}
+						c = l.advance()
+						break
+					}
+				}
+			} else if r == '*' { // block comment
+				_ = l.advance()
+				for {
+					r2 := l.advance()
+					if r2 == 0 {
+						t.Kind = tok.TokError
+						t.Line = l.currentLine
+						l.addError(diag.LUnterminatedBlockComment)
+						return
+					}
+					if r2 == '\n' {
+						l.currentLine++
+					}
+					if r2 == '*' && l.peek() == '/' {
+						_ = l.advance()
+						break
+					}
+				}
 				c = l.advance()
+			} else {
+				goto doneSkipping
 			}
+		default:
+			goto doneSkipping
 		}
-
 	}
-
+doneSkipping:
 	if c == 0 {
 		t.Kind = tok.TokEndOfFile
 		t.Line = l.currentLine
+		return
 	}
 
-	{
-		var proc string = string(c)
-		biggestMatch := ""
-
-		res := matchPunctuation(proc)
-
-		if res == mNone {
-			goto L1
-		}
-
-		switch res {
-		case mMatchButLongerPossible:
-			biggestMatch = proc
-		case mFullMatch:
-			t.Kind = punctuations[proc]
-			t.Line = l.currentLine
-			return
-		}
-
-	loop:
-		for {
-			proc += string(l.advance())
-			res = matchPunctuation(proc)
-
-			switch res {
-			case mNone:
-				t.Line = l.currentLine
-				if _, ok := punctuations[biggestMatch]; !ok {
-					t.Kind = tok.TokError
-					return
-				}
-				t.Kind = punctuations[biggestMatch]
-				return
-			case mPartial:
-				continue loop
-			case mMatchButLongerPossible:
-				biggestMatch = proc
-				continue loop
-			case mFullMatch:
-				t.Kind = punctuations[proc]
-				t.Line = l.currentLine
-				return
-			}
-		}
+	if isDigit(c) || (c == '.' && isDigit(l.peek())) {
+		l.scanNumberLiteral(t, c)
+		return
 	}
 
-L1:
 	if isAlpha(c) {
 		l.scanKeywordOrIdentifier(t, c)
 		return
 	}
-	if isDigit(c) {
-		l.scanNumberLiteral(t, c)
-		return
-	}
+
 	if c == '"' {
 		l.scanStringLiteral(t)
 		return
 	}
+
+	proc := string(c)
+	biggestMatch := ""
+	res := matchPunctuation(proc)
+	if res == mNone {
+		t.Kind = tok.TokError
+		t.Line = l.currentLine
+		return
+	}
+	switch res {
+	case mMatchButLongerPossible:
+		biggestMatch = proc
+	case mFullMatch:
+		t.Kind = punctuations[proc]
+		t.Line = l.currentLine
+		return
+	}
+
+	for {
+		r := l.peek()
+		if r == 0 {
+			break
+		}
+
+		proc += string(r)
+		res = matchPunctuation(proc)
+
+		switch res {
+		case mNone:
+			if _, ok := punctuations[biggestMatch]; !ok {
+				t.Kind = tok.TokError
+				t.Line = l.currentLine
+				return
+			}
+			t.Kind = punctuations[biggestMatch]
+			t.Line = l.currentLine
+			return
+		case mPartial:
+			_ = l.advance()
+			continue
+		case mMatchButLongerPossible:
+			biggestMatch = proc
+			_ = l.advance()
+			continue
+		case mFullMatch:
+			_ = l.advance()
+			t.Kind = punctuations[proc]
+			t.Line = l.currentLine
+			return
+		}
+	}
 }
 
 func (l *Lexer) scanKeywordOrIdentifier(t *tok.Token, c rune) {
+	var sb strings.Builder
+	sb.WriteRune(c)
 
+	for {
+		r := l.peek()
+		if r == 0 || !isAlphaNum(r) {
+			break
+		}
+		_ = l.advance()
+		sb.WriteRune(r)
+	}
+
+	lex := sb.String()
+
+	if k, ok := keywords[lex]; ok {
+		t.Kind = k
+	} else {
+		t.Kind = tok.TokIdentifier
+		t.Lexeme = lex
+	}
+
+	t.Line = l.currentLine
 }
 
-func (l *Lexer) scanNumberLiteral(t *tok.Token, c rune) {
+func (l *Lexer) scanNumberLiteral(t *tok.Token, first rune) {
+	var sb strings.Builder
+	sb.WriteRune(first)
 
+	seenDot := first == '.'
+	seenExp := false
+
+	for {
+		r := l.peek()
+		if r == 0 {
+			break
+		}
+
+		if r == '.' {
+			if seenDot {
+				break
+			}
+			_ = l.advance() // consume the dot
+			next := l.peek()
+			if !isDigit(next) {
+				t.Kind = tok.TokError
+				t.Line = l.currentLine
+				l.addError(diag.LInvalidNumberLiteral)
+				return
+			}
+			sb.WriteRune('.')
+			seenDot = true
+			continue
+		}
+
+		if r == 'e' || r == 'E' {
+			if seenExp {
+				break
+			}
+			_ = l.advance()
+			sb.WriteRune(r)
+			seenExp = true
+			r2 := l.peek()
+			if r2 == '+' || r2 == '-' {
+				_ = l.advance()
+				sb.WriteRune(r2)
+			}
+			continue
+		}
+
+		if isDigit(r) || isAlpha(r) {
+			_ = l.advance()
+			sb.WriteRune(r)
+			continue
+		}
+
+		break
+	}
+
+	lit := sb.String()
+
+	if strings.HasSuffix(lit, ".") {
+		t.Kind = tok.TokError
+		t.Line = l.currentLine
+		l.addError(diag.LInvalidNumberLiteral)
+		return
+	}
+
+	kind, val, err := ClassifyNumberLiteral(lit)
+	if err != nil {
+		t.Kind = tok.TokError
+		t.Line = l.currentLine
+		l.addError(diag.LInvalidNumberLiteral)
+		return
+	}
+
+	t.Kind = kind
+	t.Value = val
+	t.Lexeme = lit
+	t.Line = l.currentLine
 }
 
 func (l *Lexer) scanStringLiteral(t *tok.Token) {
+	var sb strings.Builder
 
+	for {
+		r := l.advance()
+		if r == 0 {
+			t.Kind = tok.TokError
+			t.Line = l.currentLine
+			l.addError(diag.LUnterminatedString)
+			return
+		}
+
+		if r == '\n' {
+			l.currentLine++
+		}
+
+		if r == '"' {
+			break
+		}
+
+		sb.WriteRune(r)
+	}
+
+	raw := `"` + sb.String() + `"`
+
+	val, err := strconv.Unquote(raw)
+	if err != nil {
+		t.Kind = tok.TokError
+		t.Line = l.currentLine
+		l.addError(diag.LInvalidEscape)
+		return
+	}
+
+	t.Kind = tok.TokString
+	t.Value = val
+	t.Lexeme = raw
+	t.Line = l.currentLine
 }
 
 func isAlpha(r rune) bool {
-	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || r == '_'
 }
 func isDigit(r rune) bool {
 	return r >= '0' && r <= '9'
 }
 func isAlphaNum(r rune) bool {
-	return isAlpha(r) || isDigit(r) || r == '_' || r == '$'
+	return isAlpha(r) || isDigit(r)
 }

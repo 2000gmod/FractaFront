@@ -1,0 +1,30 @@
+# Configuration files for generating errors for the Fracta compiler
+
+Lexer:
+    prefix: L
+    errors:
+        - UnexpectedChar:
+              msg: "Got an unexpected character"
+              severity: "Error"
+        - UnterminatedString:
+              msg: "String literal is not terminated"
+              severity: "Error"
+        - UnterminatedBlockComment:
+              msg: "Block comment was not terminated."
+              severity: "Error"
+        - InvalidNumberLiteral:
+              msg: "Got invalid number literal."
+              severity: "Error"
+        - InvalidEscape:
+              msg: "Got invalid escape sequence."
+              severity: "Error"
+
+Parser:
+    prefix: P
+    errors:
+        - TestError:
+              msg: "Test error thing"
+              severity: "Error"
+        - TestWarning:
+              msg: "Test warning thing"
+              severity: "Warning"
