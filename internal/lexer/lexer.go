@@ -49,22 +49,23 @@ const (
 )
 
 func matchPunctuation(src string) matchResult {
-	var exact, prefix bool
+	var exact, longer bool
 
 	for p := range punctuations {
-		if strings.HasPrefix(p, src) {
-			prefix = true
-			if p == src {
-				exact = true
-			}
+		if p == src {
+			exact = true
+		}
+		if strings.HasPrefix(p, src) && len(p) > len(src) {
+			longer = true
 		}
 	}
+
 	switch {
-	case exact && prefix:
+	case exact && longer:
 		return mMatchButLongerPossible
 	case exact:
 		return mFullMatch
-	case prefix:
+	case longer:
 		return mPartial
 	default:
 		return mNone
@@ -298,6 +299,7 @@ func (l *Lexer) scanKeywordOrIdentifier(t *tok.Token, c rune) {
 	} else {
 		t.Kind = tok.TokIdentifier
 		t.Lexeme = lex
+		t.Identifier = lex
 	}
 
 	t.Line = l.currentLine

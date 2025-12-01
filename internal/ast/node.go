@@ -4,7 +4,7 @@ type ASTNode interface {
 	node()
 }
 
-type Expr interface {
+type Expression interface {
 	ASTNode
 	exprNode()
 }

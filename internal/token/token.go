@@ -61,9 +61,10 @@ const (
 
 // Represents a token from Fracta
 type Token struct {
-	Kind   TokenType // The kind of token this is
-	Lexeme string    // The source string this token was built out of
-	Value  any       // Literal value
-	Line   int       // Position within source file
-	File   string    // Source file name of this token
+	Kind       TokenType // The kind of token this is
+	Lexeme     string    // The source string this token was built out of
+	Value      any       // Literal value
+	Identifier string    // Identifier name if any
+	Line       int       // Position within source file
+	File       string    // Source file name of this token
 }

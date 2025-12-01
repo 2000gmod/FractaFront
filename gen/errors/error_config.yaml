@@ -1,30 +1,60 @@
 # Configuration files for generating errors for the Fracta compiler
 
 Lexer:
-    prefix: L
-    errors:
-        - UnexpectedChar:
-              msg: "Got an unexpected character"
-              severity: "Error"
-        - UnterminatedString:
-              msg: "String literal is not terminated"
-              severity: "Error"
-        - UnterminatedBlockComment:
-              msg: "Block comment was not terminated."
-              severity: "Error"
-        - InvalidNumberLiteral:
-              msg: "Got invalid number literal."
-              severity: "Error"
-        - InvalidEscape:
-              msg: "Got invalid escape sequence."
-              severity: "Error"
+  prefix: L
+  errors:
+    - UnexpectedChar:
+        msg: "Got an unexpected character"
+        severity: "Error"
+    - UnterminatedString:
+        msg: "String literal is not terminated"
+        severity: "Error"
+    - UnterminatedBlockComment:
+        msg: "Block comment was not terminated"
+        severity: "Error"
+    - InvalidNumberLiteral:
+        msg: "Got invalid number literal"
+        severity: "Error"
+    - InvalidEscape:
+        msg: "Got invalid escape sequence"
+        severity: "Error"
 
 Parser:
-    prefix: P
-    errors:
-        - TestError:
-              msg: "Test error thing"
-              severity: "Error"
-        - TestWarning:
-              msg: "Test warning thing"
-              severity: "Warning"
+  prefix: P
+  errors:
+    - UnexpectedToken:
+        msg: "Unexpected token."
+        severity: "Error"
+    - ExpectedIdentifier:
+        msg: "Expected identifier"
+        severity: "Error"
+    - ExpectedParameterIdentifier:
+        msg: "Expected parameter identifier"
+        severity: "Error"
+    - ExpectedFunctionParenthesis:
+        msg: "Expected '(' after function name"
+        severity: "Error"
+    - InvalidTypeExpression:
+        msg: "Invalid type expression"
+        severity: "Error"
+    - ExpectedFunctionParamComma:
+        msg: "Expected ',' after a non-terminal function parameter declaration"
+        severity: "Error"
+    - ExpectedSemicolon:
+        msg: "Expected semicolon ';'"
+        severity: "Error"
+    - ExpectedCloseBracketAfterBlock:
+        msg: "Expected '}' after a block"
+        severity: "Error"
+    - InvalidExpressionToken:
+        msg: "Got an unexpected token for expression"
+        severity: "Error"
+    - ExpectedClosingParenthesis:
+        msg: "Expected ')'"
+        severity: "Error"
+    - ExpectedClosingSquare:
+        msg: "Expected ']'"
+        severity: "Error"
+    - ExpectedComma:
+        msg: "Expected ','"
+        severity: "Error"
