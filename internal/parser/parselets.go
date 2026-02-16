@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fracta/internal/ast"
-	"fracta/internal/diag"
 	"fracta/internal/token"
 )
 
@@ -41,7 +40,7 @@ func (*GroupingParser) Parse(p *Parser, tok token.Token) (ast.Expression, error)
 		return nil, err
 	}
 
-	p.consume(token.TokCloseParen, diag.PExpectedClosingParenthesis)
+	p.consume(token.TokCloseParen, "expected ')'")
 
 	return expr, nil
 }
@@ -127,7 +126,7 @@ func (c *CallParser) Parse(p *Parser, left ast.Expression, tok token.Token) (ast
 		args = append(args, expr)
 
 		for p.check(token.TokOpComma) {
-			_, err = p.consume(token.TokOpComma, diag.PExpectedComma)
+			_, err = p.consume(token.TokOpComma, "expected ','")
 			if err != nil {
 				return nil, err
 			}
@@ -139,7 +138,7 @@ func (c *CallParser) Parse(p *Parser, left ast.Expression, tok token.Token) (ast
 			args = append(args, expr)
 		}
 	}
-	_, err := p.consume(token.TokCloseParen, diag.PExpectedClosingParenthesis)
+	_, err := p.consume(token.TokCloseParen, "expected ')'")
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +168,7 @@ func (c *IndexParser) Parse(p *Parser, left ast.Expression, tok token.Token) (as
 		args = append(args, expr)
 
 		for p.check(token.TokOpComma) {
-			_, err = p.consume(token.TokOpComma, diag.PExpectedComma)
+			_, err = p.consume(token.TokOpComma, "expected ','")
 			if err != nil {
 				return nil, err
 			}
@@ -181,7 +180,7 @@ func (c *IndexParser) Parse(p *Parser, left ast.Expression, tok token.Token) (as
 			args = append(args, expr)
 		}
 	}
-	_, err := p.consume(token.TokCloseSquare, diag.PExpectedClosingSquare)
+	_, err := p.consume(token.TokCloseSquare, "expected ']'")
 	if err != nil {
 		return nil, err
 	}

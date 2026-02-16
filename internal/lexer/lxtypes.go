@@ -2,7 +2,6 @@ package lexer
 
 import (
 	"bufio"
-	"fracta/internal/diag"
 	"io"
 	"os"
 )
@@ -13,7 +12,6 @@ type Lexer struct {
 	closer      io.Closer
 	currentLine int
 	filename    string
-	errors      []*diag.ErrorContainer
 }
 
 func NewLexerFromFile(path string) (*Lexer, error) {
@@ -27,7 +25,6 @@ func NewLexerFromFile(path string) (*Lexer, error) {
 		closer:      f,
 		currentLine: 1,
 		filename:    path,
-		errors:      []*diag.ErrorContainer{},
 	}, nil
 }
 
@@ -36,7 +33,6 @@ func NewLexerFromReader(r io.Reader, name string) *Lexer {
 		reader:      bufio.NewReader(r),
 		currentLine: 1,
 		filename:    name,
-		errors:      []*diag.ErrorContainer{},
 	}
 }
 

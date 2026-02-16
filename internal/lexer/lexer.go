@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"fmt"
 	"fracta/internal/diag"
 	tok "fracta/internal/token"
 	"io"
@@ -72,14 +73,11 @@ func matchPunctuation(src string) matchResult {
 	}
 }
 
-func (l *Lexer) GetErrors() []*diag.ErrorContainer {
-	return l.errors
-}
+func (l *Lexer) addError(f string, v ...any) {
+	msg := fmt.Sprintf(f, v...)
+	other := diag.CreateError(msg, l.filename, l.currentLine)
 
-func (l *Lexer) addError(ekind diag.LexerErrorKind) {
-	other := diag.GetLexerErrorKind(ekind, l.filename, l.currentLine)
-
-	l.errors = append(l.errors, other)
+	diag.AppendError(other)
 }
 
 // Closes the file handle, if any
@@ -186,7 +184,7 @@ func (l *Lexer) ScanToken(t *tok.Token) {
 					if r2 == 0 {
 						t.Kind = tok.TokError
 						t.Line = l.currentLine
-						l.addError(diag.LUnterminatedBlockComment)
+						l.addError("unterminated block comment")
 						return
 					}
 					if r2 == '\n' {
@@ -327,7 +325,7 @@ func (l *Lexer) scanNumberLiteral(t *tok.Token, first rune) {
 			if !isDigit(next) {
 				t.Kind = tok.TokError
 				t.Line = l.currentLine
-				l.addError(diag.LInvalidNumberLiteral)
+				l.addError("invalid number literal: %q", sb.String())
 				return
 			}
 			sb.WriteRune('.')
@@ -364,7 +362,7 @@ func (l *Lexer) scanNumberLiteral(t *tok.Token, first rune) {
 	if strings.HasSuffix(lit, ".") {
 		t.Kind = tok.TokError
 		t.Line = l.currentLine
-		l.addError(diag.LInvalidNumberLiteral)
+		l.addError("invalid number literal: %q", sb.String())
 		return
 	}
 
@@ -372,7 +370,7 @@ func (l *Lexer) scanNumberLiteral(t *tok.Token, first rune) {
 	if err != nil {
 		t.Kind = tok.TokError
 		t.Line = l.currentLine
-		l.addError(diag.LInvalidNumberLiteral)
+		l.addError("invalid number literal: %q", sb.String())
 		return
 	}
 
@@ -390,7 +388,7 @@ func (l *Lexer) scanStringLiteral(t *tok.Token) {
 		if r == 0 {
 			t.Kind = tok.TokError
 			t.Line = l.currentLine
-			l.addError(diag.LUnterminatedString)
+			l.addError("unterminated string literal")
 			return
 		}
 
@@ -411,7 +409,7 @@ func (l *Lexer) scanStringLiteral(t *tok.Token) {
 	if err != nil {
 		t.Kind = tok.TokError
 		t.Line = l.currentLine
-		l.addError(diag.LInvalidEscape)
+		l.addError("invalid escape sequence")
 		return
 	}
 

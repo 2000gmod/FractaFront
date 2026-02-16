@@ -1,5 +1,7 @@
 package token
 
+import "fmt"
+
 // Represents the type of token
 type TokenType byte
 
@@ -66,5 +68,19 @@ type Token struct {
 	Value      any       // Literal value
 	Identifier string    // Identifier name if any
 	Line       int       // Position within source file
-	File       string    // Source file name of this token
+}
+
+func (t Token) String() string {
+	name := t.Kind.String()[3:]
+
+	switch t.Kind {
+	case TokI8, TokI16, TokI32, TokI64, TokU8, TokU16, TokU32, TokU64, TokF32, TokF64:
+		return fmt.Sprintf("%s(%v)", name, t.Value)
+	case TokChar:
+		return fmt.Sprintf("%s('%c')", name, t.Value)
+	case TokString:
+		return fmt.Sprintf("%s(%q)", name, t.Value)
+	default:
+		return fmt.Sprintf("%s", name)
+	}
 }

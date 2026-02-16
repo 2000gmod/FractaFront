@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"fracta/internal/diag"
 	"fracta/internal/token"
 	"slices"
@@ -28,11 +29,11 @@ func (p *Parser) advance() *token.Token {
 	return p.previous()
 }
 
-func (p *Parser) consume(tt token.TokenType, e diag.ParserErrorKind) (*token.Token, error) {
+func (p *Parser) consume(tt token.TokenType, f string, v ...any) (*token.Token, error) {
 	if p.check(tt) {
 		return p.advance(), nil
 	}
-	err := p.addError(e)
+	err := p.addError(f, v...)
 	return nil, err
 }
 
@@ -52,9 +53,10 @@ func (p *Parser) match(tts ...token.TokenType) bool {
 	return false
 }
 
-func (p *Parser) addError(e diag.ParserErrorKind) *diag.ErrorContainer {
-	o := diag.GetParserErrorKind(e, p.filename, p.peek().Line)
+func (p *Parser) addError(f string, v ...any) *diag.ErrorContainer {
+	msg := fmt.Sprintf(f, v...)
+	o := diag.CreateError(msg, p.filename, p.previous().Line)
 
-	p.errors = append(p.errors, o)
+	diag.AppendError(o)
 	return o
 }

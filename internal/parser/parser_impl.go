@@ -6,7 +6,7 @@ import (
 	"fracta/internal/token"
 )
 
-func (p *Parser) Parse() (*ast.FileSourceNode, error) {
+func (p *Parser) Parse() *ast.FileSourceNode {
 	statements := make([]ast.Statement, 0)
 
 	for !p.isAtEnd() {
@@ -17,14 +17,14 @@ func (p *Parser) Parse() (*ast.FileSourceNode, error) {
 		statements = append(statements, stmt)
 	}
 
-	if len(p.errors) != 0 {
-		return nil, &diag.ErrorList{Errors: p.errors}
+	if len(diag.GlobalErrors) != 0 {
+		return nil
 	}
 
 	return &ast.FileSourceNode{
 		Filename:   p.filename,
 		Statements: statements,
-	}, nil
+	}
 }
 
 func (p *Parser) typeExpr() (ast.Type, error) {
@@ -32,7 +32,7 @@ func (p *Parser) typeExpr() (ast.Type, error) {
 	case p.match(token.TokIdentifier):
 		return p.namedType()
 	default:
-		err := p.addError(diag.PInvalidTypeExpression)
+		err := p.addError("invalid type expression")
 		return nil, err
 	}
 }
@@ -62,13 +62,13 @@ func (p *Parser) statement() (ast.Statement, error) {
 
 func (p *Parser) funcDeclStmt() (ast.Statement, error) {
 	line := p.previous().Line
-	name, err := p.consume(token.TokIdentifier, diag.PExpectedIdentifier)
+	name, err := p.consume(token.TokIdentifier, "expected identifier")
 
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = p.consume(token.TokOpenParen, diag.PExpectedFunctionParenthesis)
+	_, err = p.consume(token.TokOpenParen, "expected '('")
 
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (p *Parser) funcDeclStmt() (ast.Statement, error) {
 	args := make([]ast.ArgPair, 0)
 
 	for !p.match(token.TokCloseParen) {
-		pname, err := p.consume(token.TokIdentifier, diag.PExpectedParameterIdentifier)
+		pname, err := p.consume(token.TokIdentifier, "expected parameter identifier")
 
 		if err != nil {
 			return nil, err
@@ -97,7 +97,7 @@ func (p *Parser) funcDeclStmt() (ast.Statement, error) {
 		if p.match(token.TokCloseParen) {
 			break
 		} else {
-			_, err = p.consume(token.TokOpComma, diag.PExpectedFunctionParamComma)
+			_, err = p.consume(token.TokOpComma, "expected ','")
 			if err != nil {
 				return nil, err
 			}
@@ -124,7 +124,7 @@ func (p *Parser) funcDeclStmt() (ast.Statement, error) {
 	} else if p.match(token.TokSemicolon) {
 		body = nil
 	} else {
-		err = p.addError(diag.PUnexpectedToken)
+		err = p.addError("unexpected token")
 		return nil, err
 	}
 
@@ -151,7 +151,7 @@ func (p *Parser) returnStmt() (ast.Statement, error) {
 			return nil, err
 		}
 
-		_, err = p.consume(token.TokSemicolon, diag.PExpectedSemicolon)
+		_, err = p.consume(token.TokSemicolon, "expected ';'")
 
 		if err != nil {
 			return nil, err
@@ -178,7 +178,7 @@ func (p *Parser) blockStmt() (ast.Statement, error) {
 		body = append(body, stmt)
 	}
 
-	_, err := p.consume(token.TokCloseBracket, diag.PExpectedCloseBracketAfterBlock)
+	_, err := p.consume(token.TokCloseBracket, "expected '}'")
 
 	if err != nil {
 		return nil, err
@@ -197,7 +197,7 @@ func (p *Parser) exprStmt() (ast.Statement, error) {
 		return nil, err
 	}
 
-	_, err = p.consume(token.TokSemicolon, diag.PExpectedSemicolon)
+	_, err = p.consume(token.TokSemicolon, "expected ';'")
 
 	if err != nil {
 		return nil, err
@@ -214,7 +214,7 @@ func (p *Parser) parseExpression(minBp float32) (ast.Expression, error) {
 	prefix, ok := p.prefixParsers[tok.Kind]
 
 	if !ok {
-		err := p.addError(diag.PInvalidExpressionToken)
+		err := p.addError("invalid token in expression: %v", *tok)
 		return nil, err
 	}
 

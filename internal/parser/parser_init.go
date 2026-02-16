@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fracta/internal/diag"
 	"fracta/internal/lexer"
 	"fracta/internal/token"
 	"strings"
@@ -24,7 +23,6 @@ func FromScanner(lex *lexer.Lexer, filename string) *Parser {
 	parser := Parser{}
 	parser.filename = filename
 	parser.toks = make([]token.Token, 0)
-	parser.errors = make([]*diag.ErrorContainer, 0)
 
 	parser.prefixParsers = map[token.TokenType]prefixParser{
 		token.TokI8:     &LiteralParser{},
@@ -69,7 +67,6 @@ func FromScanner(lex *lexer.Lexer, filename string) *Parser {
 	}
 
 	toks := lex.GetAllTokens()
-	parser.errors = append(parser.errors, lex.GetErrors()...)
 	parser.toks = append(parser.toks, toks...)
 	return &parser
 }

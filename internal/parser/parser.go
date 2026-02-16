@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fracta/internal/ast"
-	"fracta/internal/diag"
 	"fracta/internal/token"
 )
 
@@ -10,7 +9,6 @@ type Parser struct {
 	toks     []token.Token
 	current  int
 	filename string
-	errors   []*diag.ErrorContainer
 
 	prefixParsers  map[token.TokenType]prefixParser
 	infixParsers   map[token.TokenType]infixParser

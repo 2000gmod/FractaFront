@@ -1,11 +1,29 @@
-//go:generate go run ./gen/errors/gen_errors.go
-
 package main
 
 import (
-	"fracta/cmd"
+	"fracta/internal/diag"
+	"fracta/internal/parser"
+	"os"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func main() {
-	cmd.ProgramEntry()
+	testSrc := []byte(
+		`func main() {
+			a
+			return 5;
+		}`,
+	)
+
+	p := parser.FromString(string(testSrc), "test.fr")
+	ast := p.Parse()
+
+	if diag.HadErrors() {
+		diag.ReportErrors()
+		os.Exit(1)
+	}
+
+	spew.Config.Indent = "    "
+	spew.Dump(ast)
 }
