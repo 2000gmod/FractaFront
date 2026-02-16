@@ -54,9 +54,27 @@ func (p *Parser) match(tts ...token.TokenType) bool {
 }
 
 func (p *Parser) addError(f string, v ...any) *diag.ErrorContainer {
-	msg := fmt.Sprintf(f, v...)
-	o := diag.CreateError(msg, p.filename, p.previous().Line)
+	line := 0
+	if prev := p.previous(); prev != nil {
+		line = prev.Line
+	}
 
-	diag.AppendError(o)
+	msg := fmt.Sprintf(f, v...)
+	o := diag.CreateError(msg, p.filename, line)
+
+	p.Errors = append(p.Errors, o)
 	return o
+}
+
+func (p *Parser) synchronize(ttypes ...token.TokenType) bool {
+	for !p.isAtEnd() {
+		if p.previous().Kind == token.TokSemicolon {
+			return true
+		}
+		if slices.Contains(ttypes, p.peek().Kind) {
+			return true
+		}
+		p.advance()
+	}
+	return false
 }

@@ -1,6 +1,9 @@
 package token
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 // Represents the type of token
 type TokenType byte
@@ -77,9 +80,11 @@ func (t Token) String() string {
 	case TokI8, TokI16, TokI32, TokI64, TokU8, TokU16, TokU32, TokU64, TokF32, TokF64:
 		return fmt.Sprintf("%s(%v)", name, t.Value)
 	case TokChar:
-		return fmt.Sprintf("%s('%c')", name, t.Value)
+		return fmt.Sprintf("%s(%s)", name, strconv.QuoteRune(t.Value.(rune)))
 	case TokString:
-		return fmt.Sprintf("%s(%q)", name, t.Value)
+		return fmt.Sprintf("%s(%s)", name, strconv.Quote(t.Value.(string)))
+	case TokIdentifier:
+		return fmt.Sprintf("%s(%q)", name, t.Identifier)
 	default:
 		return fmt.Sprintf("%s", name)
 	}

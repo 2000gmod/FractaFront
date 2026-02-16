@@ -1,8 +1,12 @@
 package diag
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 var GlobalErrors = make([]*ErrorContainer, 0)
+var globalErrorsMux = sync.RWMutex{}
 
 type ErrorContainer struct {
 	Message  string
@@ -22,15 +26,22 @@ func CreateError(msg, file string, line int) *ErrorContainer {
 	}
 }
 
-func AppendError(err *ErrorContainer) {
-	GlobalErrors = append(GlobalErrors, err)
+func AppendError(errs ...*ErrorContainer) {
+	globalErrorsMux.Lock()
+	defer globalErrorsMux.Unlock()
+	GlobalErrors = append(GlobalErrors, errs...)
 }
 
 func HadErrors() bool {
+	globalErrorsMux.RLock()
+	defer globalErrorsMux.RUnlock()
 	return len(GlobalErrors) != 0
 }
 
 func ReportErrors() {
+	globalErrorsMux.RLock()
+	defer globalErrorsMux.RUnlock()
+
 	if !HadErrors() {
 		return
 	}

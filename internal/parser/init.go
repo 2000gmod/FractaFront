@@ -1,28 +1,15 @@
 package parser
 
 import (
-	"fracta/internal/lexer"
+	"fracta/internal/diag"
 	"fracta/internal/token"
-	"strings"
 )
 
-func FromString(src, filename string) *Parser {
-	lex := lexer.NewLexerFromReader(strings.NewReader(src), filename)
-	return FromScanner(lex, filename)
-}
-
-func FromFile(fpath string) *Parser {
-	lex, err := lexer.NewLexerFromFile(fpath)
-	if err != nil {
-		panic(err)
-	}
-	return FromScanner(lex, fpath)
-}
-
-func FromScanner(lex *lexer.Lexer, filename string) *Parser {
+func NewParser(toks []token.Token, filename string) *Parser {
 	parser := Parser{}
 	parser.filename = filename
-	parser.toks = make([]token.Token, 0)
+	parser.toks = toks
+	parser.Errors = make([]*diag.ErrorContainer, 0)
 
 	parser.prefixParsers = map[token.TokenType]prefixParser{
 		token.TokI8:     &LiteralParser{},
@@ -59,14 +46,5 @@ func FromScanner(lex *lexer.Lexer, filename string) *Parser {
 		token.TokOpenSquare: &IndexParser{precedence: 50},
 	}
 
-	if !lex.IsOpen() {
-		var tok token.Token
-		tok.Kind = token.TokEndOfFile
-		parser.toks = append(parser.toks, tok)
-		return &parser
-	}
-
-	toks := lex.GetAllTokens()
-	parser.toks = append(parser.toks, toks...)
 	return &parser
 }

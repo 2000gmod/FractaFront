@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fracta/internal/ast"
+	"fracta/internal/diag"
 	"fracta/internal/token"
 )
 
@@ -13,6 +14,8 @@ type Parser struct {
 	prefixParsers  map[token.TokenType]prefixParser
 	infixParsers   map[token.TokenType]infixParser
 	postfixParsers map[token.TokenType]postfixParser
+
+	Errors []*diag.ErrorContainer
 }
 
 type prefixParser interface {

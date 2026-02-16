@@ -2,28 +2,28 @@ package main
 
 import (
 	"fracta/internal/diag"
-	"fracta/internal/parser"
-	"os"
+	"fracta/internal/pipeline"
 
+	"github.com/alecthomas/kong"
 	"github.com/davecgh/go-spew/spew"
 )
 
+var CLI struct {
+	File string `arg:"" name:"file" default:"test.fr"`
+}
+
 func main() {
-	testSrc := []byte(
-		`func main() {
-			a
-			return 5;
-		}`,
-	)
+	kong.Parse(&CLI)
+	ast, err := pipeline.SingleFileReadingPipeline(CLI.File)
 
-	p := parser.FromString(string(testSrc), "test.fr")
-	ast := p.Parse()
-
-	if diag.HadErrors() {
+	if err != nil {
 		diag.ReportErrors()
-		os.Exit(1)
+		return
 	}
+	_ = ast
 
 	spew.Config.Indent = "    "
+	spew.Config.DisablePointerAddresses = true
 	spew.Dump(ast)
+
 }

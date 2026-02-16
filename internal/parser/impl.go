@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fracta/internal/ast"
-	"fracta/internal/diag"
 	"fracta/internal/token"
 )
 
@@ -17,7 +16,7 @@ func (p *Parser) Parse() *ast.FileSourceNode {
 		statements = append(statements, stmt)
 	}
 
-	if len(diag.GlobalErrors) != 0 {
+	if len(p.Errors) > 0 {
 		return nil
 	}
 
@@ -55,6 +54,10 @@ func (p *Parser) statement() (ast.Statement, error) {
 		stmt, err = p.returnStmt()
 	default:
 		stmt, err = p.exprStmt()
+	}
+
+	if err != nil {
+		p.synchronize()
 	}
 
 	return stmt, err
@@ -172,7 +175,10 @@ func (p *Parser) blockStmt() (ast.Statement, error) {
 		stmt, err := p.statement()
 
 		if err != nil {
-			return nil, err
+			if !p.synchronize(token.TokCloseBracket) {
+				return nil, err
+			}
+			continue
 		}
 
 		body = append(body, stmt)
