@@ -42,14 +42,6 @@ type Binary struct {
 func (*Binary) node()     {}
 func (*Binary) exprNode() {}
 
-type Paren struct {
-	ExprBase
-	SubExpr Expression
-}
-
-func (*Paren) node()     {}
-func (*Paren) exprNode() {}
-
 type Call struct {
 	ExprBase
 	Callee Expression

@@ -1,11 +1,20 @@
 package parser
 
 import (
+	"errors"
+	"fmt"
 	"fracta/internal/ast"
+	"fracta/internal/diag"
 	"fracta/internal/token"
 )
 
-func (p *Parser) Parse() *ast.FileSourceNode {
+func (p *Parser) Parse() (*ast.FileSourceNode, error) {
+	if p.done {
+		return nil, fmt.Errorf("already parsed")
+	}
+
+	defer func() { p.done = true }()
+
 	statements := make([]ast.Statement, 0)
 
 	for !p.isAtEnd() {
@@ -16,14 +25,21 @@ func (p *Parser) Parse() *ast.FileSourceNode {
 		statements = append(statements, stmt)
 	}
 
-	if len(p.Errors) > 0 {
-		return nil
+	errList := make([]error, 0)
+	diag.AppendError(p.errors...)
+
+	for _, e := range p.errors {
+		errList = append(errList, e)
+	}
+
+	if len(p.errors) > 0 {
+		return nil, errors.Join(errList...)
 	}
 
 	return &ast.FileSourceNode{
 		Filename:   p.filename,
 		Statements: statements,
-	}
+	}, nil
 }
 
 func (p *Parser) typeExpr() (ast.Type, error) {
@@ -44,8 +60,8 @@ func (p *Parser) namedType() (ast.Type, error) {
 }
 
 func (p *Parser) statement() (ast.Statement, error) {
-	var stmt ast.Statement = nil
-	var err error = nil
+	var stmt ast.Statement
+	var err error
 
 	switch {
 	case p.match(token.TokKwFunc):
@@ -138,6 +154,7 @@ func (p *Parser) funcDeclStmt() (ast.Statement, error) {
 		ReturnType: rtp,
 		Body:       body,
 	}, nil
+
 }
 
 func (p *Parser) returnStmt() (ast.Statement, error) {
@@ -148,7 +165,7 @@ func (p *Parser) returnStmt() (ast.Statement, error) {
 	if p.match(token.TokSemicolon) {
 		value = nil
 	} else {
-		value, err = p.parseExpression(0.0)
+		value, err = p.parseExpression(0)
 
 		if err != nil {
 			return nil, err
@@ -171,7 +188,7 @@ func (p *Parser) blockStmt() (ast.Statement, error) {
 	line := p.previous().Line
 	body := make([]ast.Statement, 0)
 
-	for !p.check(token.TokCloseBracket) {
+	for !p.check(token.TokCloseBracket) && !p.isAtEnd() {
 		stmt, err := p.statement()
 
 		if err != nil {
@@ -197,7 +214,7 @@ func (p *Parser) blockStmt() (ast.Statement, error) {
 }
 
 func (p *Parser) exprStmt() (ast.Statement, error) {
-	expr, err := p.parseExpression(0.0)
+	expr, err := p.parseExpression(0)
 
 	if err != nil {
 		return nil, err
@@ -214,7 +231,7 @@ func (p *Parser) exprStmt() (ast.Statement, error) {
 	}, nil
 }
 
-func (p *Parser) parseExpression(minBp float32) (ast.Expression, error) {
+func (p *Parser) parseExpression(minBp int) (ast.Expression, error) {
 	tok := p.advance()
 
 	prefix, ok := p.prefixParsers[tok.Kind]

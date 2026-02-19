@@ -9,7 +9,7 @@ func NewParser(toks []token.Token, filename string) *Parser {
 	parser := Parser{}
 	parser.filename = filename
 	parser.toks = toks
-	parser.Errors = make([]*diag.ErrorContainer, 0)
+	parser.errors = make([]*diag.ErrorContainer, 0)
 
 	parser.prefixParsers = map[token.TokenType]prefixParser{
 		token.TokI8:     &LiteralParser{},
@@ -34,11 +34,11 @@ func NewParser(toks []token.Token, filename string) *Parser {
 	}
 
 	parser.infixParsers = map[token.TokenType]infixParser{
-		token.TokOpPlus:  &BinaryOperatorParser{lbp: 10, rbp: 11},
-		token.TokOpMinus: &BinaryOperatorParser{lbp: 10, rbp: 11},
-		token.TokOpStar:  &BinaryOperatorParser{lbp: 20, rbp: 21},
-		token.TokOpSlash: &BinaryOperatorParser{lbp: 20, rbp: 21},
-		token.TokOpMod:   &BinaryOperatorParser{lbp: 20, rbp: 21},
+		token.TokOpPlus:  &BinaryOperatorParser{precedence: 10, assoc: AssocLeft},
+		token.TokOpMinus: &BinaryOperatorParser{precedence: 10, assoc: AssocLeft},
+		token.TokOpStar:  &BinaryOperatorParser{precedence: 20, assoc: AssocLeft},
+		token.TokOpSlash: &BinaryOperatorParser{precedence: 20, assoc: AssocLeft},
+		token.TokOpMod:   &BinaryOperatorParser{precedence: 20, assoc: AssocLeft},
 	}
 
 	parser.postfixParsers = map[token.TokenType]postfixParser{

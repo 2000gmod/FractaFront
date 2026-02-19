@@ -86,6 +86,6 @@ func (t Token) String() string {
 	case TokIdentifier:
 		return fmt.Sprintf("%s(%q)", name, t.Identifier)
 	default:
-		return fmt.Sprintf("%s", name)
+		return name
 	}
 }

@@ -17,7 +17,7 @@ type Lexer struct {
 	peekedRune  rune
 	peekedValid bool
 
-	Errors []*diag.ErrorContainer
+	errors []*diag.ErrorContainer
 }
 
 func NewLexerFromFile(path string) (*Lexer, error) {
@@ -32,7 +32,7 @@ func NewLexerFromFile(path string) (*Lexer, error) {
 		currentLine: 1,
 		filename:    path,
 
-		Errors: make([]*diag.ErrorContainer, 0),
+		errors: make([]*diag.ErrorContainer, 0),
 	}, nil
 }
 
@@ -42,7 +42,7 @@ func NewLexerFromReader(r io.Reader, name string) *Lexer {
 		currentLine: 1,
 		filename:    name,
 
-		Errors: make([]*diag.ErrorContainer, 0),
+		errors: make([]*diag.ErrorContainer, 0),
 	}
 }
 

@@ -15,20 +15,21 @@ type Parser struct {
 	infixParsers   map[token.TokenType]infixParser
 	postfixParsers map[token.TokenType]postfixParser
 
-	Errors []*diag.ErrorContainer
+	errors []*diag.ErrorContainer
+	done   bool
 }
 
 type prefixParser interface {
 	Parse(*Parser, token.Token) (ast.Expression, error)
-	Precedence() float32
+	Precedence() int
 }
 
 type infixParser interface {
 	Parse(*Parser, ast.Expression, token.Token) (ast.Expression, error)
-	Lbp() float32
+	Lbp() int
 }
 
 type postfixParser interface {
 	Parse(*Parser, ast.Expression, token.Token) (ast.Expression, error)
-	Precedence() float32
+	Precedence() int
 }

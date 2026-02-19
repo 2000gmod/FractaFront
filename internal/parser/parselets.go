@@ -14,8 +14,8 @@ func (*LiteralParser) Parse(p *Parser, tok token.Token) (ast.Expression, error) 
 	}, nil
 }
 
-func (*LiteralParser) Precedence() float32 {
-	return 0.0
+func (*LiteralParser) Precedence() int {
+	return 0
 }
 
 type IdentifierParser struct{}
@@ -27,30 +27,30 @@ func (*IdentifierParser) Parse(p *Parser, tok token.Token) (ast.Expression, erro
 	}, nil
 }
 
-func (*IdentifierParser) Precedence() float32 {
-	return 0.0
+func (*IdentifierParser) Precedence() int {
+	return 0
 }
 
 type GroupingParser struct{}
 
 func (*GroupingParser) Parse(p *Parser, tok token.Token) (ast.Expression, error) {
-	expr, err := p.parseExpression(0.0)
+	expr, err := p.parseExpression(0)
 
 	if err != nil {
 		return nil, err
 	}
 
-	p.consume(token.TokCloseParen, "expected ')'")
+	_, err = p.consume(token.TokCloseParen, "expected ')'")
 
-	return expr, nil
+	return expr, err
 }
 
-func (*GroupingParser) Precedence() float32 {
-	return 0.0
+func (*GroupingParser) Precedence() int {
+	return 0
 }
 
 type PrefixOperatorParser struct {
-	rbp float32
+	rbp int
 }
 
 func (o *PrefixOperatorParser) Parse(p *Parser, tok token.Token) (ast.Expression, error) {
@@ -67,17 +67,30 @@ func (o *PrefixOperatorParser) Parse(p *Parser, tok token.Token) (ast.Expression
 	}, nil
 }
 
-func (o *PrefixOperatorParser) Precedence() float32 {
+func (o *PrefixOperatorParser) Precedence() int {
 	return o.rbp
 }
 
+type Assoc int
+
+const (
+	AssocLeft Assoc = iota
+	AssocRight
+)
+
 type BinaryOperatorParser struct {
-	lbp float32
-	rbp float32
+	precedence int
+	assoc      Assoc
 }
 
 func (o *BinaryOperatorParser) Parse(p *Parser, left ast.Expression, tok token.Token) (ast.Expression, error) {
-	right, err := p.parseExpression(o.rbp)
+	rbp := o.precedence
+
+	if o.assoc == AssocLeft {
+		rbp++
+	}
+
+	right, err := p.parseExpression(rbp)
 
 	if err != nil {
 		return nil, err
@@ -91,12 +104,12 @@ func (o *BinaryOperatorParser) Parse(p *Parser, left ast.Expression, tok token.T
 	}, nil
 }
 
-func (o *BinaryOperatorParser) Lbp() float32 {
-	return o.lbp
+func (o *BinaryOperatorParser) Lbp() int {
+	return o.precedence
 }
 
 type PostfixOperatorParser struct {
-	precedence float32
+	precedence int
 }
 
 func (o *PostfixOperatorParser) Parse(p *Parser, left ast.Expression, tok token.Token) (ast.Expression, error) {
@@ -107,12 +120,12 @@ func (o *PostfixOperatorParser) Parse(p *Parser, left ast.Expression, tok token.
 	}, nil
 }
 
-func (o *PostfixOperatorParser) Precedence() float32 {
+func (o *PostfixOperatorParser) Precedence() int {
 	return o.precedence
 }
 
 type CallParser struct {
-	precedence float32
+	precedence int
 }
 
 func (c *CallParser) Parse(p *Parser, left ast.Expression, tok token.Token) (ast.Expression, error) {
@@ -149,12 +162,12 @@ func (c *CallParser) Parse(p *Parser, left ast.Expression, tok token.Token) (ast
 	}, nil
 }
 
-func (c *CallParser) Precedence() float32 {
+func (c *CallParser) Precedence() int {
 	return c.precedence
 }
 
 type IndexParser struct {
-	precedence float32
+	precedence int
 }
 
 func (c *IndexParser) Parse(p *Parser, left ast.Expression, tok token.Token) (ast.Expression, error) {
@@ -191,6 +204,6 @@ func (c *IndexParser) Parse(p *Parser, left ast.Expression, tok token.Token) (as
 	}, nil
 }
 
-func (c *IndexParser) Precedence() float32 {
+func (c *IndexParser) Precedence() int {
 	return c.precedence
 }

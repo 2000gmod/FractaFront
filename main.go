@@ -20,7 +20,6 @@ func main() {
 		diag.ReportErrors()
 		return
 	}
-	_ = ast
 
 	spew.Config.Indent = "    "
 	spew.Config.DisablePointerAddresses = true

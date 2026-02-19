@@ -62,7 +62,7 @@ func (p *Parser) addError(f string, v ...any) *diag.ErrorContainer {
 	msg := fmt.Sprintf(f, v...)
 	o := diag.CreateError(msg, p.filename, line)
 
-	p.Errors = append(p.Errors, o)
+	p.errors = append(p.errors, o)
 	return o
 }
 

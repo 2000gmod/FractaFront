@@ -1,9 +1,7 @@
 package pipeline
 
 import (
-	"fmt"
 	"fracta/internal/ast"
-	"fracta/internal/diag"
 	"fracta/internal/lexer"
 	"fracta/internal/parser"
 )
@@ -16,19 +14,17 @@ func SingleFileReadingPipeline(fname string) (*ast.FileSourceNode, error) {
 		return nil, err
 	}
 
-	toks := lex.GetAllTokens()
+	toks, err := lex.GetAllTokens()
 
-	if len(lex.Errors) > 0 {
-		diag.AppendError(lex.Errors...)
-		return nil, fmt.Errorf("had lexing errors")
+	if err != nil {
+		return nil, err
 	}
 
 	parser := parser.NewParser(toks, fname)
-	fsn := parser.Parse()
+	fsn, err := parser.Parse()
 
-	if len(parser.Errors) > 0 {
-		diag.AppendError(parser.Errors...)
-		return nil, fmt.Errorf("had parsing errors")
+	if err != nil {
+		return nil, err
 	}
 
 	return fsn, nil

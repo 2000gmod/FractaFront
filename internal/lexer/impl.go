@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"errors"
 	"fmt"
 	"fracta/internal/diag"
 	tok "fracta/internal/token"
@@ -97,7 +98,7 @@ func (l *Lexer) addError(f string, v ...any) {
 	msg := fmt.Sprintf(f, v...)
 	other := diag.CreateError(msg, l.filename, l.currentLine)
 
-	l.Errors = append(l.Errors, other)
+	l.errors = append(l.errors, other)
 }
 
 // Closes the file handle, if any
@@ -157,7 +158,7 @@ func (l *Lexer) peek() rune {
 }
 
 // Gets all the tokens, until an EOF is reached
-func (l *Lexer) GetAllTokens() []tok.Token {
+func (l *Lexer) GetAllTokens() ([]tok.Token, error) {
 	out := make([]tok.Token, 0)
 	for {
 		nw := l.GetToken()
@@ -166,7 +167,15 @@ func (l *Lexer) GetAllTokens() []tok.Token {
 			break
 		}
 	}
-	return out
+
+	errList := make([]error, 0)
+	diag.AppendError(l.errors...)
+
+	for _, e := range l.errors {
+		errList = append(errList, e)
+	}
+
+	return out, errors.Join(errList...)
 }
 
 func (l *Lexer) GetToken() tok.Token {
@@ -538,9 +547,12 @@ func isAlpha(r rune) bool {
 func isDigit(r rune) bool {
 	return r >= '0' && r <= '9'
 }
+
+/*
 func isAlphaNum(r rune) bool {
 	return isAlpha(r) || isDigit(r)
 }
+*/
 
 func isIdentifierPart(r rune) bool {
 	return r == '_' || unicode.IsLetter(r) || unicode.IsDigit(r)
