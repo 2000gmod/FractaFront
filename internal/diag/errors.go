@@ -45,7 +45,7 @@ func ReportErrors() {
 	if !HadErrors() {
 		return
 	}
-	//fmt.Printf("Got compilation errors\n")
+
 	for _, e := range GlobalErrors {
 		fmt.Printf("%v\n", e)
 	}

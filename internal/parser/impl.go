@@ -45,7 +45,15 @@ func (p *Parser) Parse() (*ast.FileSourceNode, error) {
 func (p *Parser) typeExpr() (ast.Type, error) {
 	switch {
 	case p.match(token.TokIdentifier):
-		return p.namedType()
+		id := p.previous()
+		btype, ok := ast.BuiltinTypeNameMap[id.Identifier]
+
+		if !ok {
+			return p.namedType()
+		} else {
+			return btype, nil
+		}
+
 	default:
 		err := p.addError("invalid type expression")
 		return nil, err
@@ -227,6 +235,7 @@ func (p *Parser) exprStmt() (ast.Statement, error) {
 	}
 
 	return &ast.ExpressionStatement{
+		StmtBase:   ast.StmtBase{Line: expr.ExprNode().Line},
 		Expression: expr,
 	}, nil
 }

@@ -12,16 +12,16 @@ type Literal struct {
 	Value token.Token
 }
 
-func (*Literal) node()     {}
-func (*Literal) exprNode() {}
+func (e *Literal) node()               {}
+func (e *Literal) ExprNode() *ExprBase { return &e.ExprBase }
 
 type Identifier struct {
 	ExprBase
 	Ident token.Token
 }
 
-func (*Identifier) node()     {}
-func (*Identifier) exprNode() {}
+func (e *Identifier) node()               {}
+func (e *Identifier) ExprNode() *ExprBase { return &e.ExprBase }
 
 type Unary struct {
 	ExprBase
@@ -29,8 +29,8 @@ type Unary struct {
 	SubExpr Expression
 }
 
-func (*Unary) node()     {}
-func (*Unary) exprNode() {}
+func (e *Unary) node()               {}
+func (e *Unary) ExprNode() *ExprBase { return &e.ExprBase }
 
 type Binary struct {
 	ExprBase
@@ -39,8 +39,8 @@ type Binary struct {
 	Right Expression
 }
 
-func (*Binary) node()     {}
-func (*Binary) exprNode() {}
+func (e *Binary) node()               {}
+func (e *Binary) ExprNode() *ExprBase { return &e.ExprBase }
 
 type Call struct {
 	ExprBase
@@ -48,8 +48,8 @@ type Call struct {
 	Args   []Expression
 }
 
-func (*Call) node()     {}
-func (*Call) exprNode() {}
+func (e *Call) node()               {}
+func (e *Call) ExprNode() *ExprBase { return &e.ExprBase }
 
 type Indexed struct {
 	ExprBase
@@ -57,5 +57,5 @@ type Indexed struct {
 	Indices []Expression
 }
 
-func (*Indexed) node()     {}
-func (*Indexed) exprNode() {}
+func (e *Indexed) node()               {}
+func (e *Indexed) ExprNode() *ExprBase { return &e.ExprBase }

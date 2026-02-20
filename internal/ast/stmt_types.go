@@ -19,29 +19,29 @@ type FunctionDeclaration struct {
 	Body       Statement
 }
 
-func (*FunctionDeclaration) node()     {}
-func (*FunctionDeclaration) stmtNode() {}
+func (s *FunctionDeclaration) node()               {}
+func (s *FunctionDeclaration) StmtNode() *StmtBase { return &s.StmtBase }
 
 type ReturnStatement struct {
 	StmtBase
 	Value Expression
 }
 
-func (*ReturnStatement) node()     {}
-func (*ReturnStatement) stmtNode() {}
+func (s *ReturnStatement) node()               {}
+func (s *ReturnStatement) StmtNode() *StmtBase { return &s.StmtBase }
 
 type ExpressionStatement struct {
 	StmtBase
 	Expression Expression
 }
 
-func (*ExpressionStatement) node()     {}
-func (*ExpressionStatement) stmtNode() {}
+func (s *ExpressionStatement) node()               {}
+func (s *ExpressionStatement) StmtNode() *StmtBase { return &s.StmtBase }
 
 type BlockStatement struct {
 	StmtBase
 	Body []Statement
 }
 
-func (*BlockStatement) node()     {}
-func (*BlockStatement) stmtNode() {}
+func (s *BlockStatement) node()               {}
+func (s *BlockStatement) StmtNode() *StmtBase { return &s.StmtBase }

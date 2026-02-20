@@ -13,16 +13,21 @@ var CLI struct {
 }
 
 func main() {
+	spew.Config.Indent = "    "
+	spew.Config.DisablePointerAddresses = true
+
 	kong.Parse(&CLI)
-	ast, err := pipeline.SingleFileReadingPipeline(CLI.File)
+	ast, err := pipeline.SingleFileReadingPipeline("test", CLI.File)
 
 	if err != nil {
-		diag.ReportErrors()
+		if diag.HadErrors() {
+			diag.ReportErrors()
+		} else {
+			panic(err)
+		}
 		return
 	}
 
-	spew.Config.Indent = "    "
-	spew.Config.DisablePointerAddresses = true
 	spew.Dump(ast)
 
 }

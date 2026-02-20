@@ -4,10 +4,11 @@ import (
 	"fracta/internal/ast"
 	"fracta/internal/lexer"
 	"fracta/internal/parser"
+	"fracta/internal/sema"
 )
 
 // Does a single-source pass from file to AST (no AST analysis)
-func SingleFileReadingPipeline(fname string) (*ast.FileSourceNode, error) {
+func SingleFileReadingPipeline(pkgName, fname string) ([]*ast.FileSourceNode, error) {
 	lex, err := lexer.NewLexerFromFile(fname)
 
 	if err != nil {
@@ -27,5 +28,17 @@ func SingleFileReadingPipeline(fname string) (*ast.FileSourceNode, error) {
 		return nil, err
 	}
 
-	return fsn, nil
+	sm, err := sema.NewAnalyzer(pkgName, fsn)
+
+	if err != nil {
+		return nil, err
+	}
+
+	pfsn, err := sm.Analyze()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return pfsn, nil
 }

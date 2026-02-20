@@ -6,15 +6,16 @@ type ASTNode interface {
 
 type Expression interface {
 	ASTNode
-	exprNode()
+	ExprNode() *ExprBase
 }
 
 type Statement interface {
 	ASTNode
-	stmtNode()
+	StmtNode() *StmtBase
 }
 
 type Type interface {
 	ASTNode
-	typeNode()
+	TypeNode()
+	String() string
 }

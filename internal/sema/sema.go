@@ -6,9 +6,12 @@ import (
 )
 
 type SemanticAnalyzer struct {
-	moduleAsts []ast.ASTNode
-	errors     []*diag.ErrorContainer
-}
+	packageName string
+	packageAsts []*ast.FileSourceNode
+	errors      []*diag.ErrorContainer
+	pkgScope    *scope
 
-type symbolTable struct {
+	currentScope    *scope
+	currentFile     string
+	currentFunction *ast.FunctionDeclaration
 }
