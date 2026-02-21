@@ -12,6 +12,7 @@ const (
 type symbol interface {
 	getSymbolKind() symbolKind
 	getSymbolBase() *symbolBase
+	getExprType() ast.Type
 }
 
 type symbolBase struct {
@@ -20,7 +21,7 @@ type symbolBase struct {
 
 type functionSymbol struct {
 	symbolBase
-	decl *ast.FunctionDeclaration
+	fType *ast.FunctionType
 }
 
 func (functionSymbol) getSymbolKind() symbolKind {
@@ -29,4 +30,8 @@ func (functionSymbol) getSymbolKind() symbolKind {
 
 func (s *functionSymbol) getSymbolBase() *symbolBase {
 	return &s.symbolBase
+}
+
+func (s *functionSymbol) getExprType() ast.Type {
+	return s.fType
 }

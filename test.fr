@@ -1,4 +1,5 @@
-func main() {
-    a + 5;
-    return 5;
+// Fracta test file
+
+func main() i32 {
+    return 2;
 }

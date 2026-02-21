@@ -6,11 +6,6 @@ type StmtBase struct {
 	Line int
 }
 
-type ArgPair struct {
-	Type Type
-	Name token.Token
-}
-
 type FunctionDeclaration struct {
 	StmtBase
 	Name       token.Token

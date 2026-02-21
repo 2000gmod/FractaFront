@@ -5,12 +5,27 @@ import (
 	"fmt"
 	"fracta/internal/ast"
 	"fracta/internal/diag"
+	"fracta/internal/token"
 )
 
-func (a *SemanticAnalyzer) addError(stmt *ast.StmtBase, f string, v ...any) {
+func (a *SemanticAnalyzer) addErrorStmt(stmt *ast.StmtBase, f string, v ...any) {
 	msg := fmt.Sprintf(f, v...)
 	o := diag.CreateError(msg, a.currentFile, stmt.Line)
 	a.errors = append(a.errors, o)
+}
+
+func (a *SemanticAnalyzer) addErrorExpr(expr *ast.ExprBase, f string, v ...any) {
+	msg := fmt.Sprintf(f, v...)
+	o := diag.CreateError(msg, a.currentFile, expr.Line)
+	a.errors = append(a.errors, o)
+}
+
+func (a *SemanticAnalyzer) createScope() {
+	a.currentScope = a.currentScope.newChildScope()
+}
+
+func (a *SemanticAnalyzer) dropScope() {
+	a.currentScope = a.currentScope.parent
 }
 
 func (a *SemanticAnalyzer) Analyze() ([]*ast.FileSourceNode, error) {
@@ -46,7 +61,7 @@ func (a *SemanticAnalyzer) populatePackageSymbolTable(fileTree *ast.FileSourceNo
 		case *ast.FunctionDeclaration:
 			a.populateFunctionDecl(s)
 		default:
-			a.addError(stmt.StmtNode(), "invalid statement, only declarations are allowed in top-level scope")
+			a.addErrorStmt(stmt.StmtNode(), "invalid statement, only declarations are allowed in top-level scope")
 		}
 	}
 }
@@ -54,7 +69,7 @@ func (a *SemanticAnalyzer) populatePackageSymbolTable(fileTree *ast.FileSourceNo
 func (a *SemanticAnalyzer) populateFunctionDecl(fd *ast.FunctionDeclaration) {
 	a.pkgScope.addSymbol(fd.Name.Identifier, &functionSymbol{
 		symbolBase: symbolBase{pkg: a.packageName},
-		decl:       fd,
+		fType:      ast.FuncDeclToFuncType(fd),
 	})
 }
 
@@ -69,7 +84,7 @@ func (a *SemanticAnalyzer) analyzeTopLevelStatement(st ast.Statement) {
 	case *ast.FunctionDeclaration:
 		a.analyzeFunctionDecl(s)
 	default:
-		a.addError(st.StmtNode(), "invalid top level statement")
+		a.addErrorStmt(st.StmtNode(), "invalid top level statement")
 	}
 }
 
@@ -80,7 +95,7 @@ func (a *SemanticAnalyzer) analyzeFunctionDecl(fd *ast.FunctionDeclaration) {
 	if fd.Body != nil {
 		body, ok := fd.Body.(*ast.BlockStatement)
 		if !ok {
-			a.addError(&fd.StmtBase, "only block statements are allowed in a function body")
+			a.addErrorStmt(&fd.StmtBase, "only block statements are allowed in a function body")
 			return
 		}
 		a.analyzeBlockStatement(body)
@@ -96,16 +111,16 @@ func (a *SemanticAnalyzer) analyzeStatement(st ast.Statement) {
 	case *ast.ExpressionStatement:
 		a.analyzeExpressionStatement(s)
 	default:
-		a.addError(st.StmtNode(), "invalid statement in this position")
+		a.addErrorStmt(st.StmtNode(), "invalid statement in this position")
 	}
 }
 
 func (a *SemanticAnalyzer) analyzeReturnStatement(ret *ast.ReturnStatement) {
 	if a.currentFunction.ReturnType == nil {
 		if ret.Value != nil {
-			a.addError(&ret.StmtBase, "return has value in a void function")
-			return
+			a.addErrorStmt(&ret.StmtBase, "return has value in a void function")
 		}
+		return
 	}
 
 	if ret.Value != nil {
@@ -115,22 +130,92 @@ func (a *SemanticAnalyzer) analyzeReturnStatement(ret *ast.ReturnStatement) {
 	retType := ret.Value.ExprNode().Type
 
 	if !ast.CompareTypes(retType, a.currentFunction.ReturnType) {
-		a.addError(&ret.StmtBase, "type mismatch, expression of type %q, expected %q", retType.String(), a.currentFunction.ReturnType.String())
+		a.addErrorStmt(&ret.StmtBase, "return type mismatch, expression of type %q, expected %q", retType.String(), a.currentFunction.ReturnType.String())
 		return
 	}
 
 }
 
 func (a *SemanticAnalyzer) analyzeBlockStatement(bl *ast.BlockStatement) {
+	a.createScope()
+	defer a.dropScope()
+
 	for _, st := range bl.Body {
 		a.analyzeStatement(st)
 	}
 }
 
 func (a *SemanticAnalyzer) analyzeExpressionStatement(est *ast.ExpressionStatement) {
-
+	a.analyzeExpression(est.Expression)
 }
 
 func (a *SemanticAnalyzer) analyzeExpression(expr ast.Expression) {
+	switch e := expr.(type) {
+	case *ast.Literal:
+		a.analyzeLiteralExpr(e)
+	case *ast.Identifier:
+		a.analyzeIdentifierExpr(e)
+	case *ast.Unary:
+		a.analyzeUnaryExpr(e)
+	case *ast.Binary:
+		a.analyzeBinaryExpr(e)
+	case *ast.Call:
+		a.analyzeCallExpr(e)
+	case *ast.Indexed:
+		a.analyzeIndexedExpr(e)
+	default:
+		a.addErrorExpr(expr.ExprNode(), "unknown expression kind")
+	}
+}
 
+func (a *SemanticAnalyzer) analyzeLiteralExpr(e *ast.Literal) {
+	etype, ok := ast.TokenLiteralMap[e.Value.Kind]
+	if !ok {
+		a.addErrorExpr(&e.ExprBase, "literal not yet supported: %s", e.Value.String())
+		return
+	}
+
+	e.Type = etype
+}
+
+func (a *SemanticAnalyzer) analyzeIdentifierExpr(e *ast.Identifier) {
+	sym, ok := a.currentScope.getSymbol(e.Ident.Identifier)
+	if !ok {
+		a.addErrorExpr(&e.ExprBase, "used but not defined: %s", e.Ident.Identifier)
+		return
+	}
+	e.Type = sym.getExprType()
+}
+
+func (a *SemanticAnalyzer) analyzeUnaryExpr(e *ast.Unary) {
+	a.analyzeExpression(e.SubExpr)
+
+	switch e.Op.Kind {
+	case token.TokOpPlus, token.TokOpMinus:
+		if !ast.IsNumeric(e.Type) {
+			a.addErrorExpr(&e.ExprBase, "non-numeric expression type for unary expression")
+			return
+		}
+	default:
+		a.addErrorExpr(&e.ExprBase, "invalid operator for unary expression")
+		return
+	}
+}
+
+func (a *SemanticAnalyzer) analyzeBinaryExpr(e *ast.Binary) {
+	a.analyzeExpression(e.Left)
+	a.analyzeExpression(e.Right)
+
+	if !ast.CompareTypes(e.Left.ExprNode().Type, e.Right.ExprNode().Type) {
+		a.addErrorExpr(&e.ExprBase, "mismatched types for expression")
+		return
+	}
+}
+
+func (a *SemanticAnalyzer) analyzeCallExpr(e *ast.Call) {
+	a.addErrorExpr(&e.ExprBase, "call expression not supported yet")
+}
+
+func (a *SemanticAnalyzer) analyzeIndexedExpr(e *ast.Indexed) {
+	a.addErrorExpr(&e.ExprBase, "index expression not supported yet")
 }

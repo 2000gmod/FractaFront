@@ -21,7 +21,7 @@ func NewAnalyzer(pkgName string, packageAsts ...*ast.FileSourceNode) (*SemanticA
 		packageAsts: packageAsts,
 		errors:      make([]*diag.ErrorContainer, 0),
 	}
-	a.pkgScope = newScope(nil, a)
+	a.pkgScope = newScope(nil)
 	a.currentScope = a.pkgScope
 
 	return a, nil

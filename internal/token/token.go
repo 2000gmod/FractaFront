@@ -9,9 +9,10 @@ import (
 type TokenType byte
 
 const (
-	TokNone      TokenType = iota // No token
-	TokError                      // Lexing error
-	TokEndOfFile                  // End of file
+	TokNone TokenType = iota // No token
+
+	TokError     // Lexing error
+	TokEndOfFile // End of file
 
 	TokI8  // 8 bit signed literal
 	TokI16 // 16 bit signed literal

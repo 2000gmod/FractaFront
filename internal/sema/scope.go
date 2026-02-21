@@ -3,21 +3,19 @@ package sema
 import "fmt"
 
 type scope struct {
-	sema    *SemanticAnalyzer
 	symbols map[string]symbol
 	parent  *scope
 }
 
-func newScope(parent *scope, sema *SemanticAnalyzer) *scope {
+func newScope(parent *scope) *scope {
 	return &scope{
-		sema:    sema,
 		symbols: map[string]symbol{},
 		parent:  parent,
 	}
 }
 
 func (s *scope) newChildScope() *scope {
-	return newScope(s, s.sema)
+	return newScope(s)
 }
 
 func (s *scope) isSymbolPresent(name string) bool {
@@ -37,4 +35,15 @@ func (s *scope) addSymbol(name string, sym symbol) error {
 	}
 	s.symbols[name] = sym
 	return nil
+}
+
+func (s *scope) getSymbol(name string) (symbol, bool) {
+	val, ok := s.symbols[name]
+	if !ok {
+		if s.parent == nil {
+			return nil, false
+		}
+		return s.parent.getSymbol(name)
+	}
+	return val, true
 }
