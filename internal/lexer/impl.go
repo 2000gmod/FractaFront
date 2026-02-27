@@ -1,7 +1,6 @@
 package lexer
 
 import (
-	"errors"
 	"fmt"
 	"fracta/internal/diag"
 	tok "fracta/internal/token"
@@ -168,14 +167,11 @@ func (l *Lexer) GetAllTokens() ([]tok.Token, error) {
 		}
 	}
 
-	errList := make([]error, 0)
-	diag.AppendError(l.errors...)
-
-	for _, e := range l.errors {
-		errList = append(errList, e)
+	if len(l.errors) != 0 {
+		return nil, diag.ErrorList(l.errors)
 	}
 
-	return out, errors.Join(errList...)
+	return out, nil
 }
 
 func (l *Lexer) GetToken() tok.Token {

@@ -2,11 +2,8 @@ package diag
 
 import (
 	"fmt"
-	"sync"
+	"strings"
 )
-
-var GlobalErrors = make([]*ErrorContainer, 0)
-var globalErrorsMux = sync.RWMutex{}
 
 type ErrorContainer struct {
 	Message  string
@@ -18,6 +15,17 @@ func (e *ErrorContainer) Error() string {
 	return fmt.Sprintf("(%s:%d) %s", e.Filaname, e.Line, e.Message)
 }
 
+type ErrorList []*ErrorContainer
+
+func (el ErrorList) Error() string {
+	sb := strings.Builder{}
+
+	for _, v := range el {
+		sb.WriteString(v.Error())
+	}
+	return sb.String()
+}
+
 func CreateError(msg, file string, line int) *ErrorContainer {
 	return &ErrorContainer{
 		Message:  msg,
@@ -26,27 +34,8 @@ func CreateError(msg, file string, line int) *ErrorContainer {
 	}
 }
 
-func AppendError(errs ...*ErrorContainer) {
-	globalErrorsMux.Lock()
-	defer globalErrorsMux.Unlock()
-	GlobalErrors = append(GlobalErrors, errs...)
-}
-
-func HadErrors() bool {
-	globalErrorsMux.RLock()
-	defer globalErrorsMux.RUnlock()
-	return len(GlobalErrors) != 0
-}
-
-func ReportErrors() {
-	globalErrorsMux.RLock()
-	defer globalErrorsMux.RUnlock()
-
-	if !HadErrors() {
-		return
-	}
-
-	for _, e := range GlobalErrors {
-		fmt.Printf("%v\n", e)
+func DiagnoseErrors(list ErrorList) {
+	for _, v := range list {
+		fmt.Println(v.Error())
 	}
 }

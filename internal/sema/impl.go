@@ -1,7 +1,6 @@
 package sema
 
 import (
-	"errors"
 	"fmt"
 	"fracta/internal/ast"
 	"fracta/internal/diag"
@@ -41,15 +40,8 @@ func (a *SemanticAnalyzer) Analyze() ([]*ast.FileSourceNode, error) {
 		}
 	}
 
-	errList := make([]error, 0)
-	diag.AppendError(a.errors...)
-
-	for _, e := range a.errors {
-		errList = append(errList, e)
-	}
-
 	if len(a.errors) > 0 {
-		return nil, errors.Join(errList...)
+		return nil, diag.ErrorList(a.errors)
 	}
 
 	return a.packageAsts, nil
@@ -67,10 +59,13 @@ func (a *SemanticAnalyzer) populatePackageSymbolTable(fileTree *ast.FileSourceNo
 }
 
 func (a *SemanticAnalyzer) populateFunctionDecl(fd *ast.FunctionDeclaration) {
-	a.pkgScope.addSymbol(fd.Name.Identifier, &functionSymbol{
+	err := a.pkgScope.addSymbol(fd.Name.Identifier, &functionSymbol{
 		symbolBase: symbolBase{pkg: a.packageName},
 		fType:      ast.FuncDeclToFuncType(fd),
 	})
+	if err != nil {
+		a.addErrorStmt(&fd.StmtBase, "symbol redefinition: %s", fd.Name.Identifier)
+	}
 }
 
 func (a *SemanticAnalyzer) analyzeFileNode(fn *ast.FileSourceNode) {

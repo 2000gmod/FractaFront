@@ -7,7 +7,7 @@ import (
 
 type SemanticAnalyzer struct {
 	packageName string
-	packageAsts []*ast.FileSourceNode
+	packageAsts ast.AST
 	errors      []*diag.ErrorContainer
 	pkgScope    *scope
 

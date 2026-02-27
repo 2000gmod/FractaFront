@@ -7,8 +7,8 @@ import (
 	"fracta/internal/sema"
 )
 
-// Does a single-source pass from file to AST (no AST analysis)
-func SingleFileReadingPipeline(pkgName, fname string) ([]*ast.FileSourceNode, error) {
+// Does a single-source pass from file to AST
+func SingleFileReadingPipeline(pkgName, fname string) (ast.AST, error) {
 	lex, err := lexer.NewLexerFromFile(fname)
 
 	if err != nil {

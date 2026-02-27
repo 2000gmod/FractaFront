@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"errors"
 	"fmt"
 	"fracta/internal/ast"
 	"fracta/internal/diag"
@@ -25,15 +24,8 @@ func (p *Parser) Parse() (*ast.FileSourceNode, error) {
 		statements = append(statements, stmt)
 	}
 
-	errList := make([]error, 0)
-	diag.AppendError(p.errors...)
-
-	for _, e := range p.errors {
-		errList = append(errList, e)
-	}
-
 	if len(p.errors) > 0 {
-		return nil, errors.Join(errList...)
+		return nil, diag.ErrorList(p.errors)
 	}
 
 	return &ast.FileSourceNode{

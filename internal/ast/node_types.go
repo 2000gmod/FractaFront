@@ -6,3 +6,7 @@ type FileSourceNode struct {
 }
 
 func (*FileSourceNode) node() {}
+
+type AST []*FileSourceNode
+
+func (AST) node() {}
