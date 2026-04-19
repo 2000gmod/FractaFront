@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
 	"fracta/internal/codegen"
 	"fracta/internal/diag"
 	"fracta/internal/pipeline"
+
+	_ "fracta/internal/codegen/tags"
 
 	"github.com/alecthomas/kong"
 	"github.com/davecgh/go-spew/spew"
@@ -14,7 +18,6 @@ var CLI struct {
 }
 
 func main() {
-	codegen.RegisterAllBackends()
 	spew.Config.Indent = "  "
 	spew.Config.DisablePointerAddresses = true
 
@@ -30,10 +33,26 @@ func main() {
 			panic(e)
 		}
 	}
+	fmt.Println(codegen.ListAvailableGenerators())
 
-	gen := codegen.GetNewCodeGenerator("llvm")
-	gen.Generate(ast, nil)
+	gen, err := codegen.GetCodegen("llvm", &codegen.CodegenOptions{
+		ModuleName: "test",
+		OutputKind: codegen.OutputLLVM_IR,
+	})
 
-	spew.Dump(ast)
+	if err != nil {
+		panic(err)
+	}
+
+	buf := bytes.Buffer{}
+	err = gen.Generate(ast, &buf)
+
+	if err != nil {
+		return
+	}
+
+	fmt.Println(buf.String())
+
+	//spew.Dump(ast)
 
 }

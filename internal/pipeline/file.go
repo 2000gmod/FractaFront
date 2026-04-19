@@ -8,7 +8,7 @@ import (
 )
 
 // Does a single-source pass from file to AST
-func SingleFileReadingPipeline(pkgName, fname string) (ast.AST, error) {
+func SingleFileReadingPipeline(pkgName, fname string) (*ast.PackageAST, error) {
 	lex, err := lexer.NewLexerFromFile(fname)
 
 	if err != nil {
@@ -28,7 +28,12 @@ func SingleFileReadingPipeline(pkgName, fname string) (ast.AST, error) {
 		return nil, err
 	}
 
-	sm, err := sema.NewAnalyzer(pkgName, fsn)
+	pkgAst := ast.PackageAST{
+		Files:       []*ast.FileSourceNode{fsn},
+		PackageName: pkgName,
+	}
+
+	sm, err := sema.NewAnalyzer(pkgName, &pkgAst)
 
 	if err != nil {
 		return nil, err

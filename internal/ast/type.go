@@ -34,7 +34,7 @@ func (*NamedType) node()     {}
 func (*NamedType) TypeNode() {}
 
 func (n *NamedType) String() string {
-	return n.Name.String()
+	return n.Name.Identifier
 }
 
 type FunctionType struct {

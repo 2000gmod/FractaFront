@@ -152,7 +152,7 @@ func (p *Parser) funcDeclStmt() (ast.Statement, error) {
 		Name:       *name,
 		Args:       args,
 		ReturnType: rtp,
-		Body:       body,
+		Body:       body.(*ast.BlockStatement),
 	}, nil
 
 }

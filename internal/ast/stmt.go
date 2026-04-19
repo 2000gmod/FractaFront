@@ -11,7 +11,7 @@ type FunctionDeclaration struct {
 	Name       token.Token
 	Args       []ArgPair
 	ReturnType Type
-	Body       Statement
+	Body       *BlockStatement
 }
 
 func (s *FunctionDeclaration) node()               {}

@@ -27,14 +27,14 @@ func (a *SemanticAnalyzer) dropScope() {
 	a.currentScope = a.currentScope.parent
 }
 
-func (a *SemanticAnalyzer) Analyze() ([]*ast.FileSourceNode, error) {
-	for _, fileAst := range a.packageAsts {
+func (a *SemanticAnalyzer) Analyze() (*ast.PackageAST, error) {
+	for _, fileAst := range a.packageAsts.Files {
 		a.currentFile = fileAst.Filename
 		a.populatePackageSymbolTable(fileAst)
 	}
 
 	if len(a.errors) == 0 {
-		for _, fn := range a.packageAsts {
+		for _, fn := range a.packageAsts.Files {
 			a.currentFile = fn.Filename
 			a.analyzeFileNode(fn)
 		}
@@ -88,11 +88,7 @@ func (a *SemanticAnalyzer) analyzeFunctionDecl(fd *ast.FunctionDeclaration) {
 	defer func() { a.currentFunction = nil }()
 
 	if fd.Body != nil {
-		body, ok := fd.Body.(*ast.BlockStatement)
-		if !ok {
-			a.addErrorStmt(&fd.StmtBase, "only block statements are allowed in a function body")
-			return
-		}
+		body := fd.Body
 		a.analyzeBlockStatement(body)
 	}
 }

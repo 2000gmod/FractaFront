@@ -7,6 +7,9 @@ type FileSourceNode struct {
 
 func (*FileSourceNode) node() {}
 
-type AST []*FileSourceNode
+type PackageAST struct {
+	Files       []*FileSourceNode
+	PackageName string
+}
 
-func (AST) node() {}
+func (*PackageAST) node() {}

@@ -6,11 +6,11 @@ import (
 	"fracta/internal/diag"
 )
 
-func NewAnalyzer(pkgName string, packageAsts ...*ast.FileSourceNode) (*SemanticAnalyzer, error) {
-	if len(packageAsts) == 0 {
+func NewAnalyzer(pkgName string, packageAsts *ast.PackageAST) (*SemanticAnalyzer, error) {
+	if len(packageAsts.Files) == 0 {
 		return nil, fmt.Errorf("no asts")
 	}
-	for _, v := range packageAsts {
+	for _, v := range packageAsts.Files {
 		if v == nil {
 			return nil, fmt.Errorf("got a nil ast")
 		}
