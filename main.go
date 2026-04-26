@@ -33,7 +33,6 @@ func main() {
 			panic(e)
 		}
 	}
-	fmt.Println(codegen.ListAvailableGenerators())
 
 	gen, err := codegen.GetCodegen("llvm", &codegen.CodegenOptions{
 		ModuleName: "test",

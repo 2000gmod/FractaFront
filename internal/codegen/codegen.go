@@ -19,6 +19,7 @@ type CodegenOptions struct {
 
 var generatorFactories = map[string]func(ops *CodegenOptions) CodeGenerator{}
 
+// Should be called in each generator's init function.
 func RegisterCodeGenerator(name string, factory func(ops *CodegenOptions) CodeGenerator) {
 	generatorFactories[name] = factory
 }
