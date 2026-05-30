@@ -1,8 +1,9 @@
 package llvmgen
 
 import (
-	"errors"
+	"fmt"
 	"fracta/internal/ast"
+	"fracta/internal/ast/core"
 	"fracta/internal/codegen"
 	"io"
 
@@ -24,7 +25,7 @@ func init() {
 	codegen.RegisterCodeGenerator("llvm", NewLlvmGenerator)
 }
 
-func NewLlvmGenerator(ops *codegen.CodegenOptions) codegen.CodeGenerator {
+func NewLlvmGenerator(ops *codegen.CodegenOptions) (codegen.CodeGenerator, error) {
 	ctx := llvm.NewContext()
 	mod := ctx.NewModule(ops.ModuleName)
 	bld := ctx.NewBuilder()
@@ -63,24 +64,15 @@ func NewLlvmGenerator(ops *codegen.CodegenOptions) codegen.CodeGenerator {
 		loopStack: make([]loopInfo, 0),
 
 		typeCache: cache,
-	}
+	}, nil
 }
 
 func (g *llvmGenerator) GetOutputKind() codegen.OutputType {
 	return g.options.OutputKind
 }
 
-func (g *llvmGenerator) Generate(ast *ast.PackageAST, w io.Writer) (e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch h := r.(type) {
-			case codegen.GenerationPanic:
-				e = errors.New(h.Msg)
-			default:
-				panic(r)
-			}
-		}
-	}()
+func (g *llvmGenerator) Generate(ast *ast.ModuleAST, w io.Writer) (e error) {
+	defer codegen.CodegenPanicHandler(&e)
 
 	for _, f := range ast.Files {
 		g.genFile(f)
@@ -122,14 +114,13 @@ func (g *llvmGenerator) Generate(ast *ast.PackageAST, w io.Writer) (e error) {
 	return nil
 }
 
-func (g *llvmGenerator) llvmTypeFromType(t ast.Type) (llvm.Type, bool) {
+func (g *llvmGenerator) llvmTypeFromType(t core.Type) (llvm.Type, bool) {
 	var key string
 	switch rt := t.(type) {
 	case *ast.BuiltinType:
 		key = rt.Name
-	case *ast.NamedType:
-		key = rt.Name.Identifier
 	default:
+		key = fmt.Sprintf("%s::%s", g.options.ModuleName, rt.String())
 	}
 
 	l, ok := g.typeCache[key]
@@ -142,7 +133,7 @@ func (g *llvmGenerator) genFile(f *ast.FileSourceNode) {
 	}
 }
 
-func (g *llvmGenerator) genStatement(st ast.Statement) {
+func (g *llvmGenerator) genStatement(st core.Statement) {
 	switch s := st.(type) {
 	case *ast.FunctionDeclaration:
 		g.genFunctionDeclaration(s)
@@ -158,7 +149,32 @@ func (g *llvmGenerator) genStatement(st ast.Statement) {
 }
 
 func (g *llvmGenerator) genFunctionDeclaration(f *ast.FunctionDeclaration) {
+	ats := []llvm.Type{}
 
+	for _, v := range f.Args {
+		t, ok := g.llvmTypeFromType(v.Type)
+		if !ok {
+			codegen.DoPanic("no type")
+		}
+		ats = append(ats, t)
+	}
+
+	rt, ok := g.llvmTypeFromType(f.ReturnType)
+
+	if !ok {
+		codegen.DoPanic("no type")
+	}
+
+	ft := llvm.FunctionType(
+		rt,
+		ats,
+		false,
+	)
+	fn := llvm.AddFunction(g.module, f.Name.Identifier, ft)
+	g.currentFunction = fn
+	defer func() { g.currentFunction = llvm.Value{} }()
+
+	g.genStatement(f.Body)
 }
 
 func (g *llvmGenerator) genReturnStatement(r *ast.ReturnStatement) {

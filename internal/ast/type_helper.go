@@ -1,8 +1,11 @@
 package ast
 
-import "reflect"
+import (
+	"fracta/internal/ast/core"
+	"reflect"
+)
 
-func CompareTypes(t1, t2 Type) bool {
+func CompareTypes(t1, t2 core.Type) bool {
 	if t1 == nil || t2 == nil {
 		return false
 	}
@@ -26,7 +29,7 @@ func CompareTypes(t1, t2 Type) bool {
 	}
 }
 
-func IsNumeric(t Type) bool {
+func IsNumeric(t core.Type) bool {
 	if t == nil {
 		return false
 	}
@@ -60,7 +63,7 @@ func IsNumeric(t Type) bool {
 }
 
 func FuncDeclToFuncType(fdecl *FunctionDeclaration) *FunctionType {
-	argTypes := make([]Type, 0, len(fdecl.Args))
+	argTypes := make([]core.Type, 0, len(fdecl.Args))
 
 	for _, v := range fdecl.Args {
 		argTypes = append(argTypes, v.Type)

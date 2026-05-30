@@ -3,39 +3,46 @@ package sema
 import (
 	"fmt"
 	"fracta/internal/ast"
+	"fracta/internal/ast/core"
 	"fracta/internal/diag"
+	"fracta/internal/symtab"
 	"fracta/internal/token"
 )
 
-func (a *SemanticAnalyzer) addErrorStmt(stmt *ast.StmtBase, f string, v ...any) {
+func (a *SemanticAnalyzer) addErrorStmt(stmt *core.StmtBase, f string, v ...any) {
 	msg := fmt.Sprintf(f, v...)
-	o := diag.CreateError(msg, a.currentFile, stmt.Line)
+	o := diag.CreateError(msg, a.currentFile.String(), stmt.Line)
 	a.errors = append(a.errors, o)
 }
 
-func (a *SemanticAnalyzer) addErrorExpr(expr *ast.ExprBase, f string, v ...any) {
+func (a *SemanticAnalyzer) addErrorExpr(expr *core.ExprBase, f string, v ...any) {
 	msg := fmt.Sprintf(f, v...)
-	o := diag.CreateError(msg, a.currentFile, expr.Line)
+	o := diag.CreateError(msg, a.currentFile.String(), expr.Line)
 	a.errors = append(a.errors, o)
 }
 
 func (a *SemanticAnalyzer) createScope() {
-	a.currentScope = a.currentScope.newChildScope()
+	a.currentScope = a.currentScope.NewChildTable()
 }
 
 func (a *SemanticAnalyzer) dropScope() {
-	a.currentScope = a.currentScope.parent
+	a.currentScope = a.currentScope.GetParent()
 }
 
-func (a *SemanticAnalyzer) Analyze() (*ast.PackageAST, error) {
-	for _, fileAst := range a.packageAsts.Files {
-		a.currentFile = fileAst.Filename
+func (a *SemanticAnalyzer) Analyze() (*ast.ModuleAST, error) {
+	for _, fileAst := range a.moduleAst.Files {
+		a.currentFile = &symtab.FileContext{
+			Name:    fileAst.Filename,
+			Path:    "",
+			Imports: make(map[string]*symtab.Module),
+		}
+		fileAst.Context = a.currentFile
 		a.populatePackageSymbolTable(fileAst)
 	}
 
 	if len(a.errors) == 0 {
-		for _, fn := range a.packageAsts.Files {
-			a.currentFile = fn.Filename
+		for _, fn := range a.moduleAst.Files {
+			a.currentFile = fn.Context
 			a.analyzeFileNode(fn)
 		}
 	}
@@ -44,7 +51,7 @@ func (a *SemanticAnalyzer) Analyze() (*ast.PackageAST, error) {
 		return nil, diag.ErrorList(a.errors)
 	}
 
-	return a.packageAsts, nil
+	return a.moduleAst, nil
 }
 
 func (a *SemanticAnalyzer) populatePackageSymbolTable(fileTree *ast.FileSourceNode) {
@@ -59,9 +66,16 @@ func (a *SemanticAnalyzer) populatePackageSymbolTable(fileTree *ast.FileSourceNo
 }
 
 func (a *SemanticAnalyzer) populateFunctionDecl(fd *ast.FunctionDeclaration) {
-	err := a.pkgScope.addSymbol(fd.Name.Identifier, &functionSymbol{
-		symbolBase: symbolBase{pkg: a.packageName},
-		fType:      ast.FuncDeclToFuncType(fd),
+	err := a.module.Symbols.AddSymbol(fd.Name.Identifier, &symtab.Symbol{
+		Name:       fd.Name.Identifier,
+		Kind:       symtab.KindFunc,
+		Const:      false,
+		Public:     false,
+		Node:       fd,
+		Type:       fd.GetSigType(),
+		Module:     a.module,
+		OwnerChain: nil,
+		Members:    nil,
 	})
 	if err != nil {
 		a.addErrorStmt(&fd.StmtBase, "symbol redefinition: %s", fd.Name.Identifier)
@@ -74,7 +88,7 @@ func (a *SemanticAnalyzer) analyzeFileNode(fn *ast.FileSourceNode) {
 	}
 }
 
-func (a *SemanticAnalyzer) analyzeTopLevelStatement(st ast.Statement) {
+func (a *SemanticAnalyzer) analyzeTopLevelStatement(st core.Statement) {
 	switch s := st.(type) {
 	case *ast.FunctionDeclaration:
 		a.analyzeFunctionDecl(s)
@@ -93,7 +107,7 @@ func (a *SemanticAnalyzer) analyzeFunctionDecl(fd *ast.FunctionDeclaration) {
 	}
 }
 
-func (a *SemanticAnalyzer) analyzeStatement(st ast.Statement) {
+func (a *SemanticAnalyzer) analyzeStatement(st core.Statement) {
 	switch s := st.(type) {
 	case *ast.ReturnStatement:
 		a.analyzeReturnStatement(s)
@@ -140,7 +154,7 @@ func (a *SemanticAnalyzer) analyzeExpressionStatement(est *ast.ExpressionStateme
 	a.analyzeExpression(est.Expression)
 }
 
-func (a *SemanticAnalyzer) analyzeExpression(expr ast.Expression) {
+func (a *SemanticAnalyzer) analyzeExpression(expr core.Expression) {
 	switch e := expr.(type) {
 	case *ast.Literal:
 		a.analyzeLiteralExpr(e)
@@ -170,12 +184,12 @@ func (a *SemanticAnalyzer) analyzeLiteralExpr(e *ast.Literal) {
 }
 
 func (a *SemanticAnalyzer) analyzeIdentifierExpr(e *ast.Identifier) {
-	sym, ok := a.currentScope.getSymbol(e.Ident.Identifier)
+	sym, ok := a.currentScope.GetSymbol(e.Ident.Identifier)
 	if !ok {
 		a.addErrorExpr(&e.ExprBase, "used but not defined: %s", e.Ident.Identifier)
 		return
 	}
-	e.Type = sym.getExprType()
+	e.Type = sym.Type
 }
 
 func (a *SemanticAnalyzer) analyzeUnaryExpr(e *ast.Unary) {

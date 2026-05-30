@@ -1,42 +1,53 @@
 package ast
 
-import "fracta/internal/token"
-
-type StmtBase struct {
-	Line int
-}
+import (
+	"fracta/internal/ast/core"
+	"fracta/internal/token"
+)
 
 type FunctionDeclaration struct {
-	StmtBase
+	core.StmtBase
 	Name       token.Token
 	Args       []ArgPair
-	ReturnType Type
+	ReturnType core.Type
 	Body       *BlockStatement
 }
 
-func (s *FunctionDeclaration) node()               {}
-func (s *FunctionDeclaration) StmtNode() *StmtBase { return &s.StmtBase }
+func (s *FunctionDeclaration) Node()                    {}
+func (s *FunctionDeclaration) StmtNode() *core.StmtBase { return &s.StmtBase }
+func (s *FunctionDeclaration) GetSigType() core.Type {
+	argTypes := make([]core.Type, 0, len(s.Args))
+
+	for _, v := range s.Args {
+		argTypes = append(argTypes, v.Type)
+	}
+
+	return &FunctionType{
+		ReturnType: s.ReturnType,
+		ArgTypes:   argTypes,
+	}
+}
 
 type ReturnStatement struct {
-	StmtBase
-	Value Expression
+	core.StmtBase
+	Value core.Expression
 }
 
-func (s *ReturnStatement) node()               {}
-func (s *ReturnStatement) StmtNode() *StmtBase { return &s.StmtBase }
+func (s *ReturnStatement) Node()                    {}
+func (s *ReturnStatement) StmtNode() *core.StmtBase { return &s.StmtBase }
 
 type ExpressionStatement struct {
-	StmtBase
-	Expression Expression
+	core.StmtBase
+	Expression core.Expression
 }
 
-func (s *ExpressionStatement) node()               {}
-func (s *ExpressionStatement) StmtNode() *StmtBase { return &s.StmtBase }
+func (s *ExpressionStatement) Node()                    {}
+func (s *ExpressionStatement) StmtNode() *core.StmtBase { return &s.StmtBase }
 
 type BlockStatement struct {
-	StmtBase
-	Body []Statement
+	core.StmtBase
+	Body []core.Statement
 }
 
-func (s *BlockStatement) node()               {}
-func (s *BlockStatement) StmtNode() *StmtBase { return &s.StmtBase }
+func (s *BlockStatement) Node()                    {}
+func (s *BlockStatement) StmtNode() *core.StmtBase { return &s.StmtBase }

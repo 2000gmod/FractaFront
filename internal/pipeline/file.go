@@ -8,7 +8,7 @@ import (
 )
 
 // Does a single-source pass from file to AST
-func SingleFileReadingPipeline(pkgName, fname string) (*ast.PackageAST, error) {
+func SingleFileReadingPipeline(pkgName, fname string) (*ast.ModuleAST, error) {
 	lex, err := lexer.NewLexerFromFile(fname)
 
 	if err != nil {
@@ -28,7 +28,7 @@ func SingleFileReadingPipeline(pkgName, fname string) (*ast.PackageAST, error) {
 		return nil, err
 	}
 
-	pkgAst := ast.PackageAST{
+	pkgAst := ast.ModuleAST{
 		Files:       []*ast.FileSourceNode{fsn},
 		PackageName: pkgName,
 	}

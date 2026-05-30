@@ -1,6 +1,9 @@
 package ast
 
-import "fracta/internal/token"
+import (
+	"fracta/internal/ast/core"
+	"fracta/internal/token"
+)
 
 var (
 	BuiltinTypeNameMap = map[string]*BuiltinType{
@@ -22,7 +25,7 @@ var (
 		"ptr": {"ptr"},
 	}
 
-	TokenLiteralMap = map[token.TokenType]Type{
+	TokenLiteralMap = map[token.TokenType]core.Type{
 		token.TokI8:  &BuiltinType{"i8"},
 		token.TokI16: &BuiltinType{"i16"},
 		token.TokI32: &BuiltinType{"i32"},
@@ -39,6 +42,6 @@ var (
 )
 
 type ArgPair struct {
-	Type Type
+	Type core.Type
 	Name token.Token
 }

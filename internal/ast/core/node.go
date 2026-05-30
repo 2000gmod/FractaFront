@@ -1,7 +1,7 @@
-package ast
+package core
 
 type ASTNode interface {
-	node()
+	Node()
 }
 
 type Expression interface {
@@ -18,4 +18,13 @@ type Type interface {
 	ASTNode
 	TypeNode()
 	String() string
+}
+
+type ExprBase struct {
+	Type Type
+	Line int
+}
+
+type StmtBase struct {
+	Line int
 }

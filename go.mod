@@ -9,7 +9,7 @@ require github.com/alecthomas/kong v1.14.0
 require tinygo.org/x/go-llvm v0.0.0-20250929104024-00fb4309ddd2
 
 require (
-	github.com/2000gmod/mbuild v1.0.1
+	github.com/2000gmod/mbuild v1.0.4
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/magefile/mage v1.17.1 // indirect

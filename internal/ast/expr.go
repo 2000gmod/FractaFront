@@ -1,61 +1,67 @@
 package ast
 
-import "fracta/internal/token"
-
-type ExprBase struct {
-	Type Type
-	Line int
-}
+import (
+	"fracta/internal/ast/core"
+	"fracta/internal/token"
+)
 
 type Literal struct {
-	ExprBase
+	core.ExprBase
 	Value token.Token
 }
 
-func (e *Literal) node()               {}
-func (e *Literal) ExprNode() *ExprBase { return &e.ExprBase }
+func (e *Literal) Node()                    {}
+func (e *Literal) ExprNode() *core.ExprBase { return &e.ExprBase }
 
 type Identifier struct {
-	ExprBase
+	core.ExprBase
 	Ident token.Token
 }
 
-func (e *Identifier) node()               {}
-func (e *Identifier) ExprNode() *ExprBase { return &e.ExprBase }
+func (e *Identifier) Node()                    {}
+func (e *Identifier) ExprNode() *core.ExprBase { return &e.ExprBase }
+
+type QualifiedName struct {
+	core.ExprBase
+	Parts []*Identifier
+}
+
+func (e *QualifiedName) Node()                    {}
+func (e *QualifiedName) ExprNode() *core.ExprBase { return &e.ExprBase }
 
 type Unary struct {
-	ExprBase
+	core.ExprBase
 	Op      token.Token
-	SubExpr Expression
+	SubExpr core.Expression
 }
 
-func (e *Unary) node()               {}
-func (e *Unary) ExprNode() *ExprBase { return &e.ExprBase }
+func (e *Unary) Node()                    {}
+func (e *Unary) ExprNode() *core.ExprBase { return &e.ExprBase }
 
 type Binary struct {
-	ExprBase
+	core.ExprBase
 	Op    token.Token
-	Left  Expression
-	Right Expression
+	Left  core.Expression
+	Right core.Expression
 }
 
-func (e *Binary) node()               {}
-func (e *Binary) ExprNode() *ExprBase { return &e.ExprBase }
+func (e *Binary) Node()                    {}
+func (e *Binary) ExprNode() *core.ExprBase { return &e.ExprBase }
 
 type Call struct {
-	ExprBase
-	Callee Expression
-	Args   []Expression
+	core.ExprBase
+	Callee core.Expression
+	Args   []core.Expression
 }
 
-func (e *Call) node()               {}
-func (e *Call) ExprNode() *ExprBase { return &e.ExprBase }
+func (e *Call) Node()                    {}
+func (e *Call) ExprNode() *core.ExprBase { return &e.ExprBase }
 
 type Indexed struct {
-	ExprBase
-	Indexee Expression
-	Indices []Expression
+	core.ExprBase
+	Indexee core.Expression
+	Indices []core.Expression
 }
 
-func (e *Indexed) node()               {}
-func (e *Indexed) ExprNode() *ExprBase { return &e.ExprBase }
+func (e *Indexed) Node()                    {}
+func (e *Indexed) ExprNode() *core.ExprBase { return &e.ExprBase }

@@ -6,6 +6,7 @@ import (
 	"fracta/internal/codegen"
 	"fracta/internal/diag"
 	"fracta/internal/pipeline"
+	"time"
 
 	_ "fracta/internal/codegen/tags"
 
@@ -17,7 +18,17 @@ var CLI struct {
 	File string `arg:"" name:"file" default:"test.fr"`
 }
 
+var start time.Time
+
+func init() {
+	start = time.Now()
+}
+
 func main() {
+	defer func() {
+		fmt.Printf("took %v\n", time.Since(start))
+	}()
+
 	spew.Config.Indent = "  "
 	spew.Config.DisablePointerAddresses = true
 

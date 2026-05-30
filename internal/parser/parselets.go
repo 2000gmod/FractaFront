@@ -2,14 +2,15 @@ package parser
 
 import (
 	"fracta/internal/ast"
+	"fracta/internal/ast/core"
 	"fracta/internal/token"
 )
 
 type LiteralParser struct{}
 
-func (*LiteralParser) Parse(p *Parser, tok token.Token) (ast.Expression, error) {
+func (*LiteralParser) Parse(p *Parser, tok token.Token) (core.Expression, error) {
 	return &ast.Literal{
-		ExprBase: ast.ExprBase{Line: tok.Line},
+		ExprBase: core.ExprBase{Line: tok.Line},
 		Value:    tok,
 	}, nil
 }
@@ -20,11 +21,39 @@ func (*LiteralParser) Precedence() int {
 
 type IdentifierParser struct{}
 
-func (*IdentifierParser) Parse(p *Parser, tok token.Token) (ast.Expression, error) {
-	return &ast.Identifier{
-		ExprBase: ast.ExprBase{Line: tok.Line},
+func (*IdentifierParser) Parse(p *Parser, tok token.Token) (core.Expression, error) {
+	ident := &ast.Identifier{
+		ExprBase: core.ExprBase{Line: tok.Line},
 		Ident:    tok,
-	}, nil
+	}
+
+	if p.match(token.TokOpDoubleColon) {
+		out := &ast.QualifiedName{
+			ExprBase: core.ExprBase{Line: tok.Line},
+			Parts:    []*ast.Identifier{ident},
+		}
+
+		for {
+			next, err := p.consume(token.TokIdentifier, "expected identifier")
+			if err != nil {
+				return nil, err
+			}
+			out.Parts = append(
+				out.Parts,
+				&ast.Identifier{
+					ExprBase: core.ExprBase{Line: next.Line},
+					Ident:    *next,
+				},
+			)
+
+			if !p.match(token.TokOpDoubleColon) {
+				break
+			}
+		}
+		return out, nil
+	} else {
+		return ident, nil
+	}
 }
 
 func (*IdentifierParser) Precedence() int {
@@ -33,7 +62,7 @@ func (*IdentifierParser) Precedence() int {
 
 type GroupingParser struct{}
 
-func (*GroupingParser) Parse(p *Parser, tok token.Token) (ast.Expression, error) {
+func (*GroupingParser) Parse(p *Parser, tok token.Token) (core.Expression, error) {
 	expr, err := p.parseExpression(0)
 
 	if err != nil {
@@ -53,7 +82,7 @@ type PrefixOperatorParser struct {
 	rbp int
 }
 
-func (o *PrefixOperatorParser) Parse(p *Parser, tok token.Token) (ast.Expression, error) {
+func (o *PrefixOperatorParser) Parse(p *Parser, tok token.Token) (core.Expression, error) {
 	right, err := p.parseExpression(o.rbp)
 
 	if err != nil {
@@ -61,7 +90,7 @@ func (o *PrefixOperatorParser) Parse(p *Parser, tok token.Token) (ast.Expression
 	}
 
 	return &ast.Unary{
-		ExprBase: ast.ExprBase{Line: tok.Line},
+		ExprBase: core.ExprBase{Line: tok.Line},
 		Op:       tok,
 		SubExpr:  right,
 	}, nil
@@ -83,7 +112,7 @@ type BinaryOperatorParser struct {
 	assoc      Assoc
 }
 
-func (o *BinaryOperatorParser) Parse(p *Parser, left ast.Expression, tok token.Token) (ast.Expression, error) {
+func (o *BinaryOperatorParser) Parse(p *Parser, left core.Expression, tok token.Token) (core.Expression, error) {
 	rbp := o.precedence
 
 	if o.assoc == AssocLeft {
@@ -97,7 +126,7 @@ func (o *BinaryOperatorParser) Parse(p *Parser, left ast.Expression, tok token.T
 	}
 
 	return &ast.Binary{
-		ExprBase: ast.ExprBase{Line: tok.Line},
+		ExprBase: core.ExprBase{Line: tok.Line},
 		Op:       tok,
 		Left:     left,
 		Right:    right,
@@ -112,9 +141,9 @@ type PostfixOperatorParser struct {
 	precedence int
 }
 
-func (o *PostfixOperatorParser) Parse(p *Parser, left ast.Expression, tok token.Token) (ast.Expression, error) {
+func (o *PostfixOperatorParser) Parse(p *Parser, left core.Expression, tok token.Token) (core.Expression, error) {
 	return &ast.Unary{
-		ExprBase: ast.ExprBase{Line: tok.Line},
+		ExprBase: core.ExprBase{Line: tok.Line},
 		Op:       tok,
 		SubExpr:  left,
 	}, nil
@@ -128,8 +157,8 @@ type CallParser struct {
 	precedence int
 }
 
-func (c *CallParser) Parse(p *Parser, left ast.Expression, tok token.Token) (ast.Expression, error) {
-	args := make([]ast.Expression, 0)
+func (c *CallParser) Parse(p *Parser, left core.Expression, tok token.Token) (core.Expression, error) {
+	args := make([]core.Expression, 0)
 
 	if !p.check(token.TokCloseParen) {
 		expr, err := p.parseExpression(0)
@@ -156,7 +185,7 @@ func (c *CallParser) Parse(p *Parser, left ast.Expression, tok token.Token) (ast
 		return nil, err
 	}
 	return &ast.Call{
-		ExprBase: ast.ExprBase{Line: tok.Line},
+		ExprBase: core.ExprBase{Line: tok.Line},
 		Callee:   left,
 		Args:     args,
 	}, nil
@@ -170,8 +199,8 @@ type IndexParser struct {
 	precedence int
 }
 
-func (c *IndexParser) Parse(p *Parser, left ast.Expression, tok token.Token) (ast.Expression, error) {
-	args := make([]ast.Expression, 0)
+func (c *IndexParser) Parse(p *Parser, left core.Expression, tok token.Token) (core.Expression, error) {
+	args := make([]core.Expression, 0)
 
 	if !p.check(token.TokCloseSquare) {
 		expr, err := p.parseExpression(0)
@@ -198,7 +227,7 @@ func (c *IndexParser) Parse(p *Parser, left ast.Expression, tok token.Token) (as
 		return nil, err
 	}
 	return &ast.Indexed{
-		ExprBase: ast.ExprBase{Line: tok.Line},
+		ExprBase: core.ExprBase{Line: tok.Line},
 		Indexee:  left,
 		Indices:  args,
 	}, nil

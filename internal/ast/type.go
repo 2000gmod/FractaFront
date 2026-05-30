@@ -2,13 +2,14 @@ package ast
 
 import (
 	"fmt"
+	"fracta/internal/ast/core"
 	"fracta/internal/token"
 	"strings"
 )
 
 type UnkownType struct{}
 
-func (UnkownType) node()     {}
+func (UnkownType) Node()     {}
 func (UnkownType) TypeNode() {}
 
 func (UnkownType) String() string {
@@ -19,7 +20,7 @@ type BuiltinType struct {
 	Name string
 }
 
-func (*BuiltinType) node()     {}
+func (*BuiltinType) Node()     {}
 func (*BuiltinType) TypeNode() {}
 
 func (b *BuiltinType) String() string {
@@ -30,7 +31,7 @@ type NamedType struct {
 	Name token.Token
 }
 
-func (*NamedType) node()     {}
+func (*NamedType) Node()     {}
 func (*NamedType) TypeNode() {}
 
 func (n *NamedType) String() string {
@@ -38,25 +39,25 @@ func (n *NamedType) String() string {
 }
 
 type FunctionType struct {
-	ReturnType Type
-	ArgTypes   []Type
+	ReturnType core.Type
+	ArgTypes   []core.Type
 }
 
-func (*FunctionType) node()     {}
+func (*FunctionType) Node()     {}
 func (*FunctionType) TypeNode() {}
 
 func (f *FunctionType) String() string {
 	s := strings.Builder{}
-	_, _ = s.WriteString("func(")
+	s.WriteString("func(")
 
 	if len(f.ArgTypes) != 0 {
 		for i := range len(f.ArgTypes) - 1 {
-			_, _ = fmt.Fprintf(&s, "%s, ", f.ArgTypes[i].String())
+			fmt.Fprintf(&s, "%s, ", f.ArgTypes[i].String())
 		}
-		_, _ = s.WriteString(f.ArgTypes[len(f.ArgTypes)-1].String())
+		s.WriteString(f.ArgTypes[len(f.ArgTypes)-1].String())
 	}
 
-	_, _ = fmt.Fprintf(&s, ") %s", f.ReturnType.String())
+	fmt.Fprintf(&s, ") %s", f.ReturnType.String())
 
 	return s.String()
 }

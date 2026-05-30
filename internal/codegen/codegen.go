@@ -8,7 +8,7 @@ import (
 
 // Represents a generalized code generation backend. Should be the last step in the compilation pipeline.
 type CodeGenerator interface {
-	Generate(ast *ast.PackageAST, w io.Writer) error
+	Generate(ast *ast.ModuleAST, w io.Writer) error
 	GetOutputKind() OutputType
 }
 
@@ -17,10 +17,15 @@ type CodegenOptions struct {
 	OutputKind OutputType
 }
 
-var generatorFactories = map[string]func(ops *CodegenOptions) CodeGenerator{}
+type CodegenFactory func(ops *CodegenOptions) (CodeGenerator, error)
+
+var generatorFactories = map[string]CodegenFactory{}
 
 // Should be called in each generator's init function.
-func RegisterCodeGenerator(name string, factory func(ops *CodegenOptions) CodeGenerator) {
+func RegisterCodeGenerator(name string, factory CodegenFactory) {
+	if _, ok := generatorFactories[name]; ok {
+		panic(fmt.Sprintf("Codegen with key %q already registered.", name))
+	}
 	generatorFactories[name] = factory
 }
 
@@ -38,5 +43,5 @@ func GetCodegen(name string, ops *CodegenOptions) (CodeGenerator, error) {
 		return nil, fmt.Errorf("code generator not available: %q", name)
 	}
 
-	return f(ops), nil
+	return f(ops)
 }

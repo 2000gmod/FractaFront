@@ -1,12 +1,14 @@
 package codegen
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type OutputType int
 
 const (
-	_ OutputType = iota
-	OutputNone
+	OutputNone OutputType = iota
 	OutputELFObject
 	OutputLLVM_IR
 	OutputAssembly
@@ -22,4 +24,15 @@ func DoPanic(f string, v ...any) {
 	}
 
 	panic(info)
+}
+
+func CodegenPanicHandler(e *error) {
+	if r := recover(); r != nil {
+		switch h := r.(type) {
+		case GenerationPanic:
+			*e = errors.New(h.Msg)
+		default:
+			panic(r)
+		}
+	}
 }

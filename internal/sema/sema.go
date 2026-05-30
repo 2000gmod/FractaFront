@@ -3,15 +3,15 @@ package sema
 import (
 	"fracta/internal/ast"
 	"fracta/internal/diag"
+	"fracta/internal/symtab"
 )
 
 type SemanticAnalyzer struct {
-	packageName string
-	packageAsts *ast.PackageAST
-	errors      []*diag.ErrorContainer
-	pkgScope    *scope
+	moduleAst *ast.ModuleAST
+	errors    []*diag.ErrorContainer
+	module    *symtab.Module
 
-	currentScope    *scope
-	currentFile     string
+	currentScope    *symtab.SymbolTable
+	currentFile     *symtab.FileContext
 	currentFunction *ast.FunctionDeclaration
 }

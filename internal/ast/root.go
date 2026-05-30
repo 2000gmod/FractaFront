@@ -1,15 +1,22 @@
 package ast
 
+import (
+	"fracta/internal/ast/core"
+	"fracta/internal/symtab"
+)
+
 type FileSourceNode struct {
+	Context    *symtab.FileContext
 	Filename   string
-	Statements []Statement
+	Statements []core.Statement
 }
 
 func (*FileSourceNode) node() {}
 
-type PackageAST struct {
+type ModuleAST struct {
 	Files       []*FileSourceNode
+	Module      *symtab.Module
 	PackageName string
 }
 
-func (*PackageAST) node() {}
+func (*ModuleAST) node() {}

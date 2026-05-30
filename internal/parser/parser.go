@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"fracta/internal/ast"
+	"fracta/internal/ast/core"
 	"fracta/internal/diag"
 	"fracta/internal/token"
 )
@@ -20,16 +20,16 @@ type Parser struct {
 }
 
 type prefixParser interface {
-	Parse(*Parser, token.Token) (ast.Expression, error)
+	Parse(*Parser, token.Token) (core.Expression, error)
 	Precedence() int
 }
 
 type infixParser interface {
-	Parse(*Parser, ast.Expression, token.Token) (ast.Expression, error)
+	Parse(*Parser, core.Expression, token.Token) (core.Expression, error)
 	Lbp() int
 }
 
 type postfixParser interface {
-	Parse(*Parser, ast.Expression, token.Token) (ast.Expression, error)
+	Parse(*Parser, core.Expression, token.Token) (core.Expression, error)
 	Precedence() int
 }

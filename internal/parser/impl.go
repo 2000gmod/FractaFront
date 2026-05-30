@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"fracta/internal/ast"
+	"fracta/internal/ast/core"
 	"fracta/internal/diag"
 	"fracta/internal/token"
 )
@@ -14,7 +15,7 @@ func (p *Parser) Parse() (*ast.FileSourceNode, error) {
 
 	defer func() { p.done = true }()
 
-	statements := make([]ast.Statement, 0)
+	statements := make([]core.Statement, 0)
 
 	for !p.isAtEnd() {
 		stmt, err := p.statement()
@@ -34,7 +35,7 @@ func (p *Parser) Parse() (*ast.FileSourceNode, error) {
 	}, nil
 }
 
-func (p *Parser) typeExpr() (ast.Type, error) {
+func (p *Parser) typeExpr() (core.Type, error) {
 	switch {
 	case p.match(token.TokIdentifier):
 		id := p.previous()
@@ -52,15 +53,15 @@ func (p *Parser) typeExpr() (ast.Type, error) {
 	}
 }
 
-func (p *Parser) namedType() (ast.Type, error) {
+func (p *Parser) namedType() (core.Type, error) {
 	name := p.previous()
 	return &ast.NamedType{
 		Name: *name,
 	}, nil
 }
 
-func (p *Parser) statement() (ast.Statement, error) {
-	var stmt ast.Statement
+func (p *Parser) statement() (core.Statement, error) {
+	var stmt core.Statement
 	var err error
 
 	switch {
@@ -79,7 +80,7 @@ func (p *Parser) statement() (ast.Statement, error) {
 	return stmt, err
 }
 
-func (p *Parser) funcDeclStmt() (ast.Statement, error) {
+func (p *Parser) funcDeclStmt() (core.Statement, error) {
 	line := p.previous().Line
 	name, err := p.consume(token.TokIdentifier, "expected identifier")
 
@@ -123,7 +124,7 @@ func (p *Parser) funcDeclStmt() (ast.Statement, error) {
 		}
 	}
 
-	var rtp ast.Type
+	var rtp core.Type
 
 	if !p.check(token.TokOpenBracket) {
 		rtp, err = p.typeExpr()
@@ -133,7 +134,7 @@ func (p *Parser) funcDeclStmt() (ast.Statement, error) {
 		}
 	}
 
-	var body ast.Statement
+	var body core.Statement
 
 	if p.match(token.TokOpenBracket) {
 		body, err = p.blockStmt()
@@ -148,7 +149,7 @@ func (p *Parser) funcDeclStmt() (ast.Statement, error) {
 	}
 
 	return &ast.FunctionDeclaration{
-		StmtBase:   ast.StmtBase{Line: line},
+		StmtBase:   core.StmtBase{Line: line},
 		Name:       *name,
 		Args:       args,
 		ReturnType: rtp,
@@ -157,9 +158,9 @@ func (p *Parser) funcDeclStmt() (ast.Statement, error) {
 
 }
 
-func (p *Parser) returnStmt() (ast.Statement, error) {
+func (p *Parser) returnStmt() (core.Statement, error) {
 	line := p.previous().Line
-	var value ast.Expression
+	var value core.Expression
 	var err error
 
 	if p.match(token.TokSemicolon) {
@@ -179,14 +180,14 @@ func (p *Parser) returnStmt() (ast.Statement, error) {
 	}
 
 	return &ast.ReturnStatement{
-		StmtBase: ast.StmtBase{Line: line},
+		StmtBase: core.StmtBase{Line: line},
 		Value:    value,
 	}, nil
 }
 
-func (p *Parser) blockStmt() (ast.Statement, error) {
+func (p *Parser) blockStmt() (core.Statement, error) {
 	line := p.previous().Line
-	body := make([]ast.Statement, 0)
+	body := make([]core.Statement, 0)
 
 	for !p.check(token.TokCloseBracket) && !p.isAtEnd() {
 		stmt, err := p.statement()
@@ -208,12 +209,12 @@ func (p *Parser) blockStmt() (ast.Statement, error) {
 	}
 
 	return &ast.BlockStatement{
-		StmtBase: ast.StmtBase{Line: line},
+		StmtBase: core.StmtBase{Line: line},
 		Body:     body,
 	}, nil
 }
 
-func (p *Parser) exprStmt() (ast.Statement, error) {
+func (p *Parser) exprStmt() (core.Statement, error) {
 	expr, err := p.parseExpression(0)
 
 	if err != nil {
@@ -227,12 +228,12 @@ func (p *Parser) exprStmt() (ast.Statement, error) {
 	}
 
 	return &ast.ExpressionStatement{
-		StmtBase:   ast.StmtBase{Line: expr.ExprNode().Line},
+		StmtBase:   core.StmtBase{Line: expr.ExprNode().Line},
 		Expression: expr,
 	}, nil
 }
 
-func (p *Parser) parseExpression(minBp int) (ast.Expression, error) {
+func (p *Parser) parseExpression(minBp int) (core.Expression, error) {
 	tok := p.advance()
 
 	prefix, ok := p.prefixParsers[tok.Kind]
