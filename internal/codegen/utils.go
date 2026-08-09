@@ -1,7 +1,6 @@
 package codegen
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -30,7 +29,7 @@ func CodegenPanicHandler(e *error) {
 	if r := recover(); r != nil {
 		switch h := r.(type) {
 		case GenerationPanic:
-			*e = errors.New(h.Msg)
+			*e = fmt.Errorf("codegen panic: %s", h.Msg)
 		default:
 			panic(r)
 		}

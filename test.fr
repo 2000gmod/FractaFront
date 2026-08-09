@@ -1,6 +1,5 @@
 // Fracta test file
 
 func main() i32 {
-    2::3;
     return 2i;
 }

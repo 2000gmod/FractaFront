@@ -6,32 +6,17 @@ import (
 	"fracta/internal/codegen"
 	"fracta/internal/diag"
 	"fracta/internal/pipeline"
-	"time"
 
 	_ "fracta/internal/codegen/tags"
 
 	"github.com/alecthomas/kong"
-	"github.com/davecgh/go-spew/spew"
 )
 
 var CLI struct {
 	File string `arg:"" name:"file" default:"test.fr"`
 }
 
-var start time.Time
-
-func init() {
-	start = time.Now()
-}
-
 func main() {
-	defer func() {
-		fmt.Printf("took %v\n", time.Since(start))
-	}()
-
-	spew.Config.Indent = "  "
-	spew.Config.DisablePointerAddresses = true
-
 	kong.Parse(&CLI)
 	ast, err := pipeline.SingleFileReadingPipeline("test", CLI.File)
 
@@ -58,11 +43,9 @@ func main() {
 	err = gen.Generate(ast, &buf)
 
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
 	fmt.Println(buf.String())
-
-	//spew.Dump(ast)
-
 }

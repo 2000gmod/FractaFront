@@ -280,7 +280,7 @@ func (p *Parser) parseExpression(minBp int) (core.Expression, error) {
 		break
 	}
 
-	left.ExprNode().Type = ast.UnkownType{}
+	left.ExprNode().Type = &ast.UnkownType{}
 
 	return left, nil
 }

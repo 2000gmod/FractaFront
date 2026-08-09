@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fracta/internal/ast/core"
+	"fracta/internal/symtab"
 	"fracta/internal/token"
 )
 
@@ -11,10 +12,12 @@ type FunctionDeclaration struct {
 	Args       []ArgPair
 	ReturnType core.Type
 	Body       *BlockStatement
+	Symbol     *symtab.Symbol
 }
 
 func (s *FunctionDeclaration) Node()                    {}
 func (s *FunctionDeclaration) StmtNode() *core.StmtBase { return &s.StmtBase }
+
 func (s *FunctionDeclaration) GetSigType() core.Type {
 	argTypes := make([]core.Type, 0, len(s.Args))
 

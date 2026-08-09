@@ -30,10 +30,13 @@ type Symbol struct {
 func (s *Symbol) GetMangledName() string {
 	b := strings.Builder{}
 	b.WriteString("fr::")
+	b.WriteString(s.Module.Name)
+	b.WriteString("::")
 
 	if s.OwnerChain != nil {
 		for _, v := range s.OwnerChain {
-			b.WriteString(v.Name + "::")
+			b.WriteString(v.Name)
+			b.WriteString("::")
 		}
 	}
 	b.WriteString(s.Name)

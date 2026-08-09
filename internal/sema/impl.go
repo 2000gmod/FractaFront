@@ -37,7 +37,7 @@ func (a *SemanticAnalyzer) Analyze() (*ast.ModuleAST, error) {
 			Imports: make(map[string]*symtab.Module),
 		}
 		fileAst.Context = a.currentFile
-		a.populatePackageSymbolTable(fileAst)
+		a.populateModuleSymbolTable(fileAst)
 	}
 
 	if len(a.errors) == 0 {
@@ -54,7 +54,7 @@ func (a *SemanticAnalyzer) Analyze() (*ast.ModuleAST, error) {
 	return a.moduleAst, nil
 }
 
-func (a *SemanticAnalyzer) populatePackageSymbolTable(fileTree *ast.FileSourceNode) {
+func (a *SemanticAnalyzer) populateModuleSymbolTable(fileTree *ast.FileSourceNode) {
 	for _, stmt := range fileTree.Statements {
 		switch s := stmt.(type) {
 		case *ast.FunctionDeclaration:
@@ -66,7 +66,11 @@ func (a *SemanticAnalyzer) populatePackageSymbolTable(fileTree *ast.FileSourceNo
 }
 
 func (a *SemanticAnalyzer) populateFunctionDecl(fd *ast.FunctionDeclaration) {
-	err := a.module.Symbols.AddSymbol(fd.Name.Identifier, &symtab.Symbol{
+	if fd.ReturnType == nil {
+		fd.ReturnType = &ast.VoidType{}
+	}
+
+	sym := &symtab.Symbol{
 		Name:       fd.Name.Identifier,
 		Kind:       symtab.KindFunc,
 		Const:      false,
@@ -76,10 +80,14 @@ func (a *SemanticAnalyzer) populateFunctionDecl(fd *ast.FunctionDeclaration) {
 		Module:     a.module,
 		OwnerChain: nil,
 		Members:    nil,
-	})
+	}
+
+	err := a.module.Symbols.AddSymbol(fd.Name.Identifier, sym)
+
 	if err != nil {
 		a.addErrorStmt(&fd.StmtBase, "symbol redefinition: %s", fd.Name.Identifier)
 	}
+	fd.Symbol = sym
 }
 
 func (a *SemanticAnalyzer) analyzeFileNode(fn *ast.FileSourceNode) {

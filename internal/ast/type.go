@@ -9,11 +9,20 @@ import (
 
 type UnkownType struct{}
 
-func (UnkownType) Node()     {}
-func (UnkownType) TypeNode() {}
+func (*UnkownType) Node()     {}
+func (*UnkownType) TypeNode() {}
 
-func (UnkownType) String() string {
+func (*UnkownType) String() string {
 	return "<unknown>"
+}
+
+type VoidType struct{}
+
+func (*VoidType) Node()     {}
+func (*VoidType) TypeNode() {}
+
+func (*VoidType) String() string {
+	return "void"
 }
 
 type BuiltinType struct {

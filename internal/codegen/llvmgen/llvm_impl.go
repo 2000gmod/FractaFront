@@ -1,7 +1,6 @@
 package llvmgen
 
 import (
-	"fmt"
 	"fracta/internal/ast"
 	"fracta/internal/ast/core"
 	"fracta/internal/codegen"
@@ -47,6 +46,8 @@ func NewLlvmGenerator(ops *codegen.CodegenOptions) (codegen.CodeGenerator, error
 		"bool": ctx.Int8Type(),
 
 		"ptr": llvm.PointerType(ctx.Int8Type(), 0),
+
+		"void": ctx.VoidType(),
 	}
 
 	return &llvmGenerator{
@@ -72,6 +73,7 @@ func (g *llvmGenerator) GetOutputKind() codegen.OutputType {
 }
 
 func (g *llvmGenerator) Generate(ast *ast.ModuleAST, w io.Writer) (e error) {
+	g.fractaModule = ast.Module
 	defer codegen.CodegenPanicHandler(&e)
 
 	for _, f := range ast.Files {
@@ -117,10 +119,12 @@ func (g *llvmGenerator) Generate(ast *ast.ModuleAST, w io.Writer) (e error) {
 func (g *llvmGenerator) llvmTypeFromType(t core.Type) (llvm.Type, bool) {
 	var key string
 	switch rt := t.(type) {
+	case *ast.VoidType:
+		key = "void"
 	case *ast.BuiltinType:
 		key = rt.Name
 	default:
-		key = fmt.Sprintf("%s::%s", g.options.ModuleName, rt.String())
+		key = rt.String()
 	}
 
 	l, ok := g.typeCache[key]
@@ -170,7 +174,7 @@ func (g *llvmGenerator) genFunctionDeclaration(f *ast.FunctionDeclaration) {
 		ats,
 		false,
 	)
-	fn := llvm.AddFunction(g.module, f.Name.Identifier, ft)
+	fn := llvm.AddFunction(g.module, f.Symbol.GetMangledName(), ft)
 	g.currentFunction = fn
 	defer func() { g.currentFunction = llvm.Value{} }()
 
