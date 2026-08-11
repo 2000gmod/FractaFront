@@ -1,5 +1,5 @@
 # Target platforms (OS/ARCH) - override with PLATFORMS="linux/amd64 linux/arm64"
-PLATFORMS ?= linux/amd64 linux/arm64
+PLATFORMS ?= linux/amd64
 
 # Convert platforms to safe target names (e.g., linux/amd64 -> build-linux_amd64)
 PLATFORM_TARGETS := $(foreach p,$(PLATFORMS),build-$(subst /,_,$p))
