@@ -1,21 +1,42 @@
 package fir
 
-type CallingConv string
+type CallingConv uint8
 
 const (
-	ConvFracta CallingConv = "fracta"
-	ConvC      CallingConv = "c"
+	_ CallingConv = iota
+
+	ConvFracta
+	ConvC
 )
 
 type Function struct {
 	valueBase
 
 	Name string
-	Sig  *FunctionType
+	Sig  *FuncType
 	Conv CallingConv
 
-	Params []*Parameter
-	Blocks []*Block
+	Params     []*Parameter
+	Blocks     []*Block
+	Stackslots []StackSlot
 
 	External bool
+
+	nextId valueId
+}
+
+func (f *Function) getNextId() valueId {
+	id := f.nextId
+	f.nextId++
+	return id
+}
+
+func (f *Function) GetParameter(index int) Value {
+	return f.Params[index]
+}
+
+type StackSlot struct {
+	valueBase
+	Name      string
+	InnerType Type
 }

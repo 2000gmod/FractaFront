@@ -4,7 +4,7 @@ type Value interface {
 	Type() Type
 }
 
-type valueId uint32
+type valueId uint64
 
 type valueBase struct {
 	typ Type

@@ -27,6 +27,7 @@ var (
 	I64  = &IntType{Bits: 64}
 	F32  = &FloatType{Bits: 32}
 	F64  = &FloatType{Bits: 64}
+	Ptr  = &PtrType{}
 )
 
 type VoidType struct{}
@@ -92,12 +93,12 @@ func (t *UnionType) Kind() TypeKind {
 	return TypeUnion
 }
 
-type FunctionType struct {
+type FuncType struct {
 	Args     []Type
 	Ret      Type
 	Variadic bool
 }
 
-func (t *FunctionType) Kind() TypeKind {
+func (t *FuncType) Kind() TypeKind {
 	return TypeFunction
 }

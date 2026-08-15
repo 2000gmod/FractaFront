@@ -21,12 +21,12 @@ type CondBrTerm struct {
 
 func (t *CondBrTerm) terminator() {}
 
-type ReturnTerm struct {
+type RetTerm struct {
 	instructionBase
 	Value Value
 }
 
-func (t *ReturnTerm) terminator() {}
+func (t *RetTerm) terminator() {}
 
 type UnreachableTerm struct {
 	instructionBase
