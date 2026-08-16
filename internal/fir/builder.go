@@ -6,9 +6,9 @@ type Builder struct {
 	current *Block
 }
 
-func NewBuilder(ctx *Context, fn *Function) *Builder {
+func NewBuilder(fn *Function) *Builder {
 	return &Builder{
-		ctx:     ctx,
+		ctx:     fn.Module.ctx,
 		fn:      fn,
 		current: nil,
 	}

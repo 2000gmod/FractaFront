@@ -5,7 +5,7 @@ PLATFORMS ?= linux/amd64
 PLATFORM_TARGETS := $(foreach p,$(PLATFORMS),build-$(subst /,_,$p))
 
 # Set to 1 to use Docker buildx, otherwise native go build (host arch only)
-DOCKER_BUILD ?= 0
+DOCKER_BUILD ?= 1
 
 # Output directory (relative to project root)
 BUILD ?= build

@@ -81,18 +81,24 @@ func (ctx *Context) GetFloatType(bits uint16) *FloatType {
 	return out
 }
 
-func (ctx *Context) GetStructType(name string) *StructType {
+func (ctx *Context) GetStructType(name string, fields ...AggregateField) *StructType {
 	if structType, ok := ctx.structs[name]; ok {
 		return structType
 	}
-	return nil
+	out := &StructType{Name: name, Fields: fields}
+	ctx.structs[name] = out
+	ctx.types = append(ctx.types, out)
+	return out
 }
 
-func (ctx *Context) GetUnionType(name string) *UnionType {
+func (ctx *Context) GetUnionType(name string, fields ...AggregateField) *UnionType {
 	if unionType, ok := ctx.unions[name]; ok {
 		return unionType
 	}
-	return nil
+	out := &UnionType{Name: name, Fields: fields}
+	ctx.unions[name] = out
+	ctx.types = append(ctx.types, out)
+	return out
 }
 
 func (ctx *Context) GetArrayType(elem Type, len uint64) *ArrayType {
@@ -127,6 +133,13 @@ func (ctx *Context) GetBoolType() *BoolType {
 
 func (ctx *Context) GetVoidType() *VoidType {
 	return ctx.void
+}
+
+func (ctx *Context) NewModule(name string) *Module {
+	return &Module{
+		Name: name,
+		ctx:  ctx,
+	}
 }
 
 func (ctx *Context) ConstInt(bits uint16, val uint64) Constant {

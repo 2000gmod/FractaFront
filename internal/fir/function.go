@@ -12,6 +12,8 @@ const (
 type Function struct {
 	valueBase
 
+	Module *Module
+
 	Name string
 	Sig  *FuncType
 	Conv CallingConv

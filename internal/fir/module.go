@@ -2,26 +2,19 @@ package fir
 
 type Module struct {
 	Name string
+	ctx  *Context
 
 	Types     []*Type
 	Functions []*Function
 	Globals   []*Global
 }
 
-func NewModule(name string) *Module {
-	return &Module{
-		Name:      name,
-		Types:     nil,
-		Functions: nil,
-		Globals:   nil,
-	}
-}
-
 func (m *Module) NewFunction(name string, typ *FuncType, conv CallingConv) *Function {
 	fn := &Function{
-		Name: name,
-		Sig:  typ,
-		Conv: conv,
+		Module: m,
+		Name:   name,
+		Sig:    typ,
+		Conv:   conv,
 	}
 
 	for _, pt := range typ.Args {
@@ -38,9 +31,9 @@ func (m *Module) NewExternalFunction(name string, typ *FuncType, conv CallingCon
 	return f
 }
 
-func (m *Module) NewGlobal(ctx *Context, name string, typ Type, val Value, linkage LinkageType) *Global {
+func (m *Module) NewGlobal(name string, typ Type, val Value, linkage LinkageType) *Global {
 	gl := &Global{
-		valueBase:  valueBase{T: ctx.GetPtrType()},
+		valueBase:  valueBase{T: m.ctx.GetPtrType()},
 		Name:       name,
 		ActualType: typ,
 		Val:        val,
@@ -51,13 +44,9 @@ func (m *Module) NewGlobal(ctx *Context, name string, typ Type, val Value, linka
 	return gl
 }
 
-func (m *Module) GetGlobalString(ctx *Context, name, str string) Value {
-	s := ctx.ConstString(str)
+func (m *Module) GetGlobalString(name, str string) Value {
+	s := m.ctx.ConstString(str)
 
-	g := m.NewGlobal(ctx, name, s.Type(), s, LinkInternal)
+	g := m.NewGlobal(name, s.Type(), s, LinkInternal)
 	return g
-}
-
-func (m *Module) Dump() []byte {
-	return nil
 }
