@@ -7,12 +7,17 @@ type Value interface {
 type valueId uint64
 
 type valueBase struct {
-	typ Type
-	id  valueId
+	T  Type
+	id valueId
 }
 
 func (v *valueBase) Type() Type {
-	return v.typ
+	return v.T
+}
+
+type Parameter struct {
+	valueBase
+	Name string
 }
 
 type Constant interface {
@@ -29,7 +34,7 @@ func (c *ConstantInt) constant() {}
 
 type ConstantFloat struct {
 	valueBase
-	Value uint64
+	Value float64
 }
 
 func (c *ConstantFloat) constant() {}
@@ -47,13 +52,6 @@ type ConstantNull struct {
 
 func (c *ConstantNull) constant() {}
 
-type ConstantStruct struct {
-	valueBase
-	Fields []Constant
-}
-
-func (c *ConstantStruct) constant() {}
-
 type ConstantArray struct {
 	valueBase
 	Elements []Constant
@@ -61,15 +59,8 @@ type ConstantArray struct {
 
 func (c *ConstantArray) constant() {}
 
-type ConstantUnion struct {
+type ConstantVoid struct {
 	valueBase
-	Member uint32
-	Value  Constant
 }
 
-func (c *ConstantUnion) constant() {}
-
-type Parameter struct {
-	valueBase
-	Name string
-}
+func (c *ConstantVoid) constant() {}

@@ -11,12 +11,10 @@ const (
 )
 
 type Global struct {
-	Name    string
-	Val     Value
-	Ty      Type
-	Linkage LinkageType
-}
+	valueBase
 
-func (g *Global) Type() Type {
-	return g.Ty
+	Name       string
+	Val        Value
+	ActualType Type
+	Linkage    LinkageType
 }

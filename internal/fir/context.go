@@ -1,14 +1,18 @@
 package fir
 
 type Context struct {
-	ptr     *PtrType
-	bool    *BoolType
+	ptr  *PtrType
+	bool *BoolType
+	void *VoidType
+
 	ints    map[uint16]*IntType     // key: bits
 	floats  map[uint16]*FloatType   // key: bits
 	structs map[string]*StructType  // key: name
 	unions  map[string]*UnionType   // key: name
 	arrays  map[arrayKey]*ArrayType // key: {elem type, len}
 	funcs   map[funcKey]*FuncType   // key: name
+
+	globalStrings map[string]Constant
 
 	types []Type // Canonical list of types
 }
@@ -26,15 +30,17 @@ type funcKey struct {
 
 func NewContext() *Context {
 	ctx := &Context{
-		ptr:     Ptr,
-		bool:    Bool,
-		ints:    make(map[uint16]*IntType),
-		floats:  make(map[uint16]*FloatType),
-		structs: make(map[string]*StructType),
-		unions:  make(map[string]*UnionType),
-		arrays:  make(map[arrayKey]*ArrayType),
-		funcs:   make(map[funcKey]*FuncType),
-		types:   make([]Type, 0, 16),
+		ptr:           Ptr,
+		bool:          Bool,
+		void:          Void,
+		ints:          make(map[uint16]*IntType),
+		floats:        make(map[uint16]*FloatType),
+		structs:       make(map[string]*StructType),
+		unions:        make(map[string]*UnionType),
+		arrays:        make(map[arrayKey]*ArrayType),
+		funcs:         make(map[funcKey]*FuncType),
+		globalStrings: make(map[string]Constant),
+		types:         make([]Type, 0, 16),
 	}
 
 	ctx.types = append(ctx.types,
@@ -117,4 +123,66 @@ func (ctx *Context) GetPtrType() *PtrType {
 
 func (ctx *Context) GetBoolType() *BoolType {
 	return ctx.bool
+}
+
+func (ctx *Context) GetVoidType() *VoidType {
+	return ctx.void
+}
+
+func (ctx *Context) ConstInt(bits uint16, val uint64) Constant {
+	intType := ctx.GetIntType(bits)
+	return &ConstantInt{
+		valueBase: valueBase{T: intType},
+		Value:     val,
+	}
+}
+
+func (ctx *Context) ConstFloat(bits uint16, val float64) Constant {
+	floatType := ctx.GetFloatType(bits)
+	return &ConstantFloat{
+		valueBase: valueBase{T: floatType},
+		Value:     val,
+	}
+}
+
+func (ctx *Context) ConstBool(val bool) Constant {
+	return &ConstantBool{
+		valueBase: valueBase{T: ctx.bool},
+		Value:     val,
+	}
+}
+
+func (ctx *Context) ConstNull() Constant {
+	return &ConstantNull{
+		valueBase: valueBase{T: ctx.GetPtrType()},
+	}
+}
+
+func (ctx *Context) ConstArray(elem Type, len uint64, elems ...Constant) Constant {
+	arrayType := ctx.GetArrayType(elem, len)
+	return &ConstantArray{
+		valueBase: valueBase{T: arrayType},
+		Elements:  elems,
+	}
+}
+
+func (ctx *Context) ConstString(val string) Constant {
+	arrayType := ctx.GetArrayType(ctx.GetIntType(8), uint64(len(val)))
+	var elems []Constant
+
+	for _, r := range val {
+		elems = append(elems, ctx.ConstInt(8, uint64(r)))
+	}
+
+	ctx.globalStrings[val] = &ConstantArray{
+		valueBase: valueBase{T: arrayType},
+		Elements:  elems,
+	}
+	return ctx.globalStrings[val]
+}
+
+func (ctx *Context) VoidValue() Constant {
+	return &ConstantVoid{
+		valueBase: valueBase{T: ctx.void},
+	}
 }

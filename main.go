@@ -1,51 +1,37 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
-	"fracta/internal/codegen"
-	"fracta/internal/diag"
-	"fracta/internal/pipeline"
-
 	_ "fracta/internal/codegen/tags"
-
-	"github.com/alecthomas/kong"
+	"fracta/internal/fir"
 )
 
-var CLI struct {
-	File string `arg:"" name:"file" default:"test.fr"`
-}
-
 func main() {
-	kong.Parse(&CLI)
-	ast, err := pipeline.SingleFileReadingPipeline("test", CLI.File)
+	m := fir.NewModule("test")
+	c := fir.NewContext()
 
-	if err != nil {
-		switch e := err.(type) {
-		case diag.ErrorList:
-			diag.DiagnoseErrors(e)
-			return
-		default:
-			panic(e)
-		}
-	}
+	puts := m.NewExternalFunction(
+		"puts",
+		c.GetFuncType(
+			false,
+			c.GetVoidType(),
+			c.GetPtrType(),
+		),
+		fir.ConvC,
+	)
 
-	gen, err := codegen.GetCodegen("llvm", &codegen.CodegenOptions{
-		ModuleName: "test",
-		OutputKind: codegen.OutputLLVM_IR,
-	})
+	fn := m.NewFunction(
+		"main",
+		c.GetFuncType(
+			false,
+			c.GetIntType(32),
+		),
+		fir.ConvFracta,
+	)
+	b := fir.NewBuilder(c, fn)
+	b.NewBlock("entry")
 
-	if err != nil {
-		panic(err)
-	}
+	s := m.GetGlobalString(c, "str.1", "Hello, World\n\x00")
+	b.InsertCall(puts, c.GetVoidType(), fir.ConvC, s)
+	b.InsertRet(c.VoidValue())
 
-	buf := bytes.Buffer{}
-	err = gen.Generate(ast, &buf)
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println(buf.String())
 }

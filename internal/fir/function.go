@@ -20,6 +20,7 @@ type Function struct {
 	Blocks     []*Block
 	Stackslots []StackSlot
 
+	Linkage  LinkageType
 	External bool
 
 	nextId valueId

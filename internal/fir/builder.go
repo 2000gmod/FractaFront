@@ -15,7 +15,9 @@ func NewBuilder(ctx *Context, fn *Function) *Builder {
 }
 
 func (b *Builder) SetInsertionPoint(block *Block) {
-	b.fn = block.Func
+	if block.Func != b.fn {
+		panic("block does not belong to this function")
+	}
 	b.current = block
 }
 
@@ -48,8 +50,8 @@ func (b *Builder) nextValueId() valueId {
 func (b *Builder) InsertStackSlot(t Type, name string) Value {
 	slot := &StackSlot{
 		valueBase: valueBase{
-			typ: b.ctx.GetPtrType(),
-			id:  b.nextValueId(),
+			T:  b.ctx.GetPtrType(),
+			id: b.nextValueId(),
 		},
 		Name:      name,
 		InnerType: t,
@@ -64,8 +66,8 @@ func (b *Builder) InsertLoad(t Type, val Value) Value {
 			parent: b.current,
 		},
 		valueBase: valueBase{
-			typ: t,
-			id:  b.nextValueId(),
+			T:  t,
+			id: b.nextValueId(),
 		},
 		T:    t,
 		From: val,
@@ -92,8 +94,8 @@ func (b *Builder) InsertElemPtr(addr Value, path ...ElemPtrPathElem) Value {
 			parent: b.current,
 		},
 		valueBase: valueBase{
-			typ: b.ctx.GetPtrType(),
-			id:  b.nextValueId(),
+			T:  b.ctx.GetPtrType(),
+			id: b.nextValueId(),
 		},
 		Addr: addr,
 		Path: path,
@@ -108,8 +110,8 @@ func (b *Builder) InsertBinaryOp(op BinaryOp, lhs Value, rhs Value) Value {
 			parent: b.current,
 		},
 		valueBase: valueBase{
-			typ: lhs.Type(),
-			id:  b.nextValueId(),
+			T:  lhs.Type(),
+			id: b.nextValueId(),
 		},
 		Op:  op,
 		Lhs: lhs,
@@ -125,8 +127,8 @@ func (b *Builder) InsertUnaryOp(op UnaryOp, val Value) Value {
 			parent: b.current,
 		},
 		valueBase: valueBase{
-			typ: val.Type(),
-			id:  b.nextValueId(),
+			T:  val.Type(),
+			id: b.nextValueId(),
 		},
 		Op:  op,
 		Val: val,
@@ -141,8 +143,8 @@ func (b *Builder) InsertCmp(op CmpPredicate, lhs Value, rhs Value) Value {
 			parent: b.current,
 		},
 		valueBase: valueBase{
-			typ: b.ctx.GetBoolType(),
-			id:  b.nextValueId(),
+			T:  b.ctx.GetBoolType(),
+			id: b.nextValueId(),
 		},
 		Op:  op,
 		Lhs: lhs,
@@ -158,8 +160,8 @@ func (b *Builder) InsertCast(val Value, typ Type) Value {
 			parent: b.current,
 		},
 		valueBase: valueBase{
-			typ: typ,
-			id:  b.nextValueId(),
+			T:  typ,
+			id: b.nextValueId(),
 		},
 		Val: val,
 	}
@@ -173,8 +175,8 @@ func (b *Builder) InsertCall(fn Value, ret Type, conv CallingConv, args ...Value
 			parent: b.current,
 		},
 		valueBase: valueBase{
-			typ: fn.Type(),
-			id:  b.nextValueId(),
+			T:  fn.Type(),
+			id: b.nextValueId(),
 		},
 		Proc:       fn,
 		Conv:       conv,

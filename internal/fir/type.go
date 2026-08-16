@@ -74,6 +74,7 @@ func (t *ArrayType) Kind() TypeKind {
 }
 
 type StructType struct {
+	Name   string
 	Fields []AggregateField
 }
 
@@ -86,6 +87,7 @@ func (t *StructType) Kind() TypeKind {
 }
 
 type UnionType struct {
+	Name   string
 	Fields []AggregateField
 }
 
